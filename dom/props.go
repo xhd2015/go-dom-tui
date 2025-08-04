@@ -112,7 +112,11 @@ func GetStringProp(props Props, key string) string {
 }
 
 type TextNodeProps struct {
-	Style Style
+	Style     Style
+	Focused   bool
+	Focusable bool
+
+	OnKeyDown func(*DOMEvent)
 }
 
 // ButtonProps represents props for button elements
@@ -130,6 +134,9 @@ type DivProps struct {
 
 	OnKeyDown      func(*DOMEvent)
 	OnWindowResize func(*DOMEvent)
+
+	Focused   bool
+	Focusable bool
 }
 
 // CounterProps represents props for Counter component
@@ -198,6 +205,7 @@ func Focusable(value bool) *bool {
 type ListItemProps struct {
 	Text      string
 	Index     int
+	Selected  bool
 	Focused   bool
 	OnFocus   func()
 	OnBlur    func()

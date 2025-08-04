@@ -65,6 +65,8 @@ func (cr *InteractiveCharmRenderer) renderNode(vnode *dom.Node, depth int) {
 		cr.renderListItem(vnode)
 	case "br":
 		cr.renderBr(vnode)
+	case "fragment":
+		cr.renderFragment(vnode)
 	case "component":
 		panic("component is deprecated")
 	default:
@@ -75,6 +77,12 @@ func (cr *InteractiveCharmRenderer) renderNode(vnode *dom.Node, depth int) {
 
 func (cr *InteractiveCharmRenderer) renderBr(vnode *dom.Node) {
 	cr.output += "\n"
+}
+
+func (cr *InteractiveCharmRenderer) renderFragment(vnode *dom.Node) {
+	for _, child := range vnode.Children {
+		cr.renderNode(child, 0)
+	}
 }
 
 // renderContainer renders a container div with border
@@ -246,7 +254,7 @@ func (cr *InteractiveCharmRenderer) renderListItem(vnode *dom.Node) {
 	}
 
 	prefix := "• "
-	if props.Focused {
+	if props.Selected {
 		// For focused items, use "> " prefix instead of bullet
 		prefix = "> "
 	}
@@ -254,7 +262,7 @@ func (cr *InteractiveCharmRenderer) renderListItem(vnode *dom.Node) {
 
 	// Style differently for selected/focused items
 	// Use compact styles for list items (assuming they're part of todo list)
-	if props.Focused {
+	if props.Selected {
 		cr.output += cr.styles.CompactSuccess.Render(renderedText) + "\n"
 	} else {
 		cr.output += cr.styles.CompactText.Render(renderedText) + "\n"

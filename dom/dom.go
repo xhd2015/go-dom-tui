@@ -81,12 +81,12 @@ type DOM struct {
 }
 
 // NewDOM creates a new DOM from a VNode tree
-func NewDOM(root *Node) *DOM {
+func NewDOM(root *Node, window *Window) *DOM {
 	dom := &DOM{
-		Window: &Window{},
+		Window: window,
 	}
 
-	dom.Root = dom.setupVNode(root, nil, dom.Window)
+	dom.Root = dom.setupVNode(root, nil, window)
 
 	return dom
 }
@@ -130,6 +130,10 @@ func (d *DOM) DispatchEvent(eventType string, key string, model interface{}) int
 
 	// Handle the event at the target and bubble up
 	result := d.handleEventBubbling(eventNode, event)
+	if !event.DefaultPrevented {
+		// handle default event
+		d.handleDefault(eventNode, event)
+	}
 	log.Logf("DOM: DispatchEvent result: %v", result)
 	return result
 }
@@ -154,56 +158,6 @@ func (d *DOM) handleEventBubbling(node *Node, event *DOMEvent) interface{} {
 		}
 	}
 
-	if !event.DefaultPrevented {
-		if event.Type == "keydown" {
-			switch event.Key {
-			case "up", "down":
-				// handle focus navigation
-				direction := 1
-				if event.Key == "up" {
-					direction = -1
-				}
-				handled := d.HandleFocusNavigation(event, direction)
-				if handled {
-					return handleResult
-				}
-			case "left", "right":
-				// move inside the input
-				if node.Type == "input" {
-					props := ExtractProps[InputProps](node.Props)
-					if props.OnCursorMove != nil {
-						delta := 1
-						if event.Key == "left" {
-							delta = -1
-						}
-						props.OnCursorMove(delta, 0)
-					}
-				}
-			default:
-				// handle input
-				if node.Type == "input" {
-					props := ExtractProps[InputProps](node.Props)
-
-					// Get current value from the model if available, otherwise from props
-					currentValue := props.Value
-
-					// Update value based on key input
-					newValue, newPos := UpdateInputValue(currentValue, props.CursorPosition, event.Key)
-					if newPos != props.CursorPosition {
-						if props.OnCursorMove != nil {
-							props.OnCursorMove(newPos-props.CursorPosition, 0)
-						}
-					}
-					if newValue != currentValue {
-						if props.OnChange != nil {
-							props.OnChange(newValue)
-						}
-					}
-				}
-			}
-		}
-	}
-
 	// If event wasn't stopped, bubble to parent
 	log.Logf("DOM: handleEventBubbling - checking bubbling conditions: stopPropagation=%t, hasParent=%t",
 		event.PropagationStopped, node.Parent != nil)
@@ -216,6 +170,55 @@ func (d *DOM) handleEventBubbling(node *Node, event *DOMEvent) interface{} {
 	log.Logf("DOM: handleEventBubbling - reached end of bubbling chain (stopPropagation=%t, hasParent=%t)",
 		event.PropagationStopped, node.Parent != nil)
 	return handleResult
+}
+
+func (d *DOM) handleDefault(node *Node, event *DOMEvent) {
+	if event.Type == "keydown" {
+		switch event.Key {
+		case "up", "down":
+			// handle focus navigation
+			direction := 1
+			if event.Key == "up" {
+				direction = -1
+			}
+			if d.HandleFocusNavigation(event, direction) {
+				return
+			}
+		case "left", "right":
+			// move inside the input
+			if node.Type == "input" {
+				props := ExtractProps[InputProps](node.Props)
+				if props.OnCursorMove != nil {
+					delta := 1
+					if event.Key == "left" {
+						delta = -1
+					}
+					props.OnCursorMove(delta, 0)
+				}
+			}
+		default:
+			// handle input
+			if node.Type == "input" {
+				props := ExtractProps[InputProps](node.Props)
+
+				// Get current value from the model if available, otherwise from props
+				currentValue := props.Value
+
+				// Update value based on key input
+				newValue, newPos := UpdateInputValue(currentValue, props.CursorPosition, event.Key)
+				if newPos != props.CursorPosition {
+					if props.OnCursorMove != nil {
+						props.OnCursorMove(newPos-props.CursorPosition, 0)
+					}
+				}
+				if newValue != currentValue {
+					if props.OnChange != nil {
+						props.OnChange(newValue)
+					}
+				}
+			}
+		}
+	}
 }
 
 // SetFocus sets focus to a specific node

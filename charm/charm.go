@@ -9,7 +9,7 @@ import (
 
 type CharmApp[T any] struct {
 	State *T
-	Root  func(state *T) *dom.Node
+	Root  func(state *T, window *dom.Window) *dom.Node
 
 	width  int
 	height int
@@ -18,7 +18,7 @@ type CharmApp[T any] struct {
 	dom      *dom.DOM // DOM tree with event handling
 }
 
-func NewCharmApp[T any](state *T, app func(state *T) *dom.Node) *CharmApp[T] {
+func NewCharmApp[T any](state *T, app func(state *T, window *dom.Window) *dom.Node) *CharmApp[T] {
 	return &CharmApp[T]{
 		State:    state,
 		Root:     app,
@@ -59,9 +59,11 @@ func (c *CharmApp[T]) Update(msg tea.Msg) interface{} {
 
 // View renders the current view
 func (c *CharmApp[T]) Render() string {
-	c.dom = dom.NewDOM(c.Root(c.State))
-	c.dom.Window.Width = c.width
-	c.dom.Window.Height = c.height
+	window := &dom.Window{
+		Width:  c.width,
+		Height: c.height,
+	}
+	c.dom = dom.NewDOM(c.Root(c.State, window), window)
 
 	// Render the output
 	return c.renderer.Render(c.dom.Root)

@@ -29,6 +29,13 @@ func Text(text string, styles ...Style) *Node {
 		Text:  text,
 	}
 }
+func TextWithProps(text string, props TextNodeProps) *Node {
+	return &Node{
+		Type:  "text",
+		Props: NewStructProps(props),
+		Text:  text,
+	}
+}
 
 // Div creates a div component
 func Div(props DivProps, children ...*Node) *Node {
@@ -71,4 +78,8 @@ func Ul(props DivProps, children ...*Node) *Node {
 
 func Li(props ListItemProps, children ...*Node) *Node {
 	return CreateNode("li", NewStructProps(props), children...)
+}
+
+func Fragment(children ...*Node) *Node {
+	return CreateNode("fragment", NewStructProps(EmptyProps{}), children...)
 }

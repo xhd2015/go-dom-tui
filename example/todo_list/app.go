@@ -84,7 +84,7 @@ func (m *AppState) OnInputKeyDown(event *dom.DOMEvent) {
 }
 
 // AppComponent creates the main application component with live textinput
-func App(props *AppState) *dom.Node {
+func App(props *AppState, window *dom.Window) *dom.Node {
 	selectedTodoIndex := props.SelectedTodoIndex
 	onChangeSelectedTodoIndex := props.OnChangeSelectedTodoIndex
 

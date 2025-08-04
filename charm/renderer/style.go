@@ -2,6 +2,7 @@ package renderer
 
 import (
 	"github.com/charmbracelet/lipgloss"
+	"github.com/xhd2015/go-dom-tui/colors"
 	"github.com/xhd2015/go-dom-tui/dom"
 )
 
@@ -60,7 +61,7 @@ func defaultStyles() CharmStyles {
 			Foreground(lipgloss.Color("#626262")).
 			Margin(0, 0),
 		CompactSuccess: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#00FF00")).
+			Foreground(lipgloss.Color(colors.GREEN_SUCCESS)).
 			Bold(true).
 			Margin(0, 0),
 		Input: lipgloss.NewStyle().
