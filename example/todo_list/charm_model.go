@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"time"
 
 	"github.com/charmbracelet/bubbles/cursor"
 	tea "github.com/charmbracelet/bubbletea"
@@ -37,7 +36,7 @@ func NewModel(debugFilePath string) *Model {
 			debugFile = nil
 		} else {
 			// Set the debug log file for the dom_based package
-			log.SetLogger(&fileLogger{file: debugFile})
+			log.SetLogger(log.NewFileLogger(debugFile))
 		}
 	}
 
@@ -76,9 +75,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	return m, tea.Every(1*time.Second, func(t time.Time) tea.Msg {
-		return nil
-	})
+	return m, nil
 }
 
 // cleanup cleans up resources before exiting

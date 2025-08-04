@@ -15,11 +15,18 @@ func CreateComponent(component Component, props Props, children ...*Node) *Node 
 }
 
 // Text creates a text node
-func Text(text string) *Node {
+func Text(text string, styles ...Style) *Node {
+	style := Style{}
+	if len(styles) > 0 {
+		if len(styles) > 1 {
+			panic("only one style is allowed")
+		}
+		style = styles[0]
+	}
 	return &Node{
-		Type:     "text",
-		Props:    NewStructProps(TextNodeProps{Text: text}),
-		Children: nil,
+		Type:  "text",
+		Props: NewStructProps(TextNodeProps{Style: style}),
+		Text:  text,
 	}
 }
 
@@ -50,7 +57,7 @@ func P(props DivProps, children ...*Node) *Node {
 	return CreateNode("p", NewStructProps(props), children...)
 }
 
-func Input(props InputComponentProps, children ...*Node) *Node {
+func Input(props InputProps, children ...*Node) *Node {
 	return CreateNode("input", NewStructProps(props), children...)
 }
 

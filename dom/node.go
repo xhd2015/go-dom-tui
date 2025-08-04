@@ -15,6 +15,12 @@ func (c *Node) GetEventHandler(eventType string) EventHandler {
 			return h
 		}
 	}
+	if eventType == "resize" {
+		h := getPropHandler(c.Props, "onWindowResize")
+		if h != nil {
+			return h
+		}
+	}
 	return nil
 }
 

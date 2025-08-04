@@ -52,13 +52,13 @@ func (c *Node) SetFocused(focused bool) {
 	if c.Props != nil {
 		if focused {
 			if onFocus, ok := c.Props.Get("onFocus"); ok {
-				if handler, ok := onFocus.(func()); ok {
+				if handler, ok := onFocus.(func()); ok && handler != nil {
 					handler()
 				}
 			}
 		} else {
 			if onBlur, ok := c.Props.Get("onBlur"); ok {
-				if handler, ok := onBlur.(func()); ok {
+				if handler, ok := onBlur.(func()); ok && handler != nil {
 					handler()
 				}
 			}

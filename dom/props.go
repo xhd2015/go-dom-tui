@@ -112,14 +112,7 @@ func GetStringProp(props Props, key string) string {
 }
 
 type TextNodeProps struct {
-	Text string
-}
-
-type InputProps struct {
-	Placeholder string
-	Value       string
-
-	OnChange func(string)
+	Style Style
 }
 
 // ButtonProps represents props for button elements
@@ -133,9 +126,10 @@ type ButtonProps struct {
 
 // DivProps represents props for div elements
 type DivProps struct {
-	Style string
+	Style Style
 
-	OnKeyDown func(*DOMEvent)
+	OnKeyDown      func(*DOMEvent)
+	OnWindowResize func(*DOMEvent)
 }
 
 // CounterProps represents props for Counter component
@@ -177,54 +171,27 @@ type ElementProps struct {
 // EmptyProps represents empty props
 type EmptyProps struct{}
 
-// InputComponentProps represents props for input component
-type InputComponentProps struct {
+// InputProps represents props for input component
+type InputProps struct {
 	Placeholder string // Input placeholder text
 	Value       string // Current input value
 
 	CursorPosition int // Cursor position
 	OnCursorMove   func(delta int, seek int)
 
-	OnKeyDown func(*DOMEvent) // Key down callback
-	OnChange  func(string)    // Value change callback
-	OnFocus   func()          // Focus callback
-	OnBlur    func()          // Blur callback
+	OnKeyDown func(e *DOMEvent) // Key down callback
+	OnChange  func(string)      // Value change callback
+	OnFocus   func()            // Focus callback
+	OnBlur    func()            // Blur callback
 
 	Focused bool // Whether the input is focused
 
 	Focusable *bool // Optional: nil = default (true for input), true/false = explicit
-	TabIndex  *int  // Optional: nil = default (0 for input), number = explicit
 }
-
-// Helper functions for creating focusable props
 
 // Focusable creates a boolean pointer for focusable property
 func Focusable(value bool) *bool {
 	return &value
-}
-
-// TabIndex creates an int pointer for tabIndex property
-func TabIndex(value int) *int {
-	return &value
-}
-
-// NewFocusableElementProps creates ElementProps with focus configuration
-func NewFocusableElementProps(style string, focusable bool, tabIndex int) *ElementProps {
-	return &ElementProps{
-		Style:     style,
-		Focusable: Focusable(focusable),
-		TabIndex:  TabIndex(tabIndex),
-	}
-}
-
-// NewFocusableButtonProps creates ButtonProps with focus configuration
-func NewFocusableButtonProps(text string, onClick func(), focusable bool, tabIndex int) *ButtonProps {
-	return &ButtonProps{
-		Text:      text,
-		OnClick:   onClick,
-		Focusable: Focusable(focusable),
-		TabIndex:  TabIndex(tabIndex),
-	}
 }
 
 // ListItemProps represents props for focusable li elements
@@ -234,7 +201,6 @@ type ListItemProps struct {
 	Focused   bool
 	OnFocus   func()
 	OnBlur    func()
-	OnKeyDown func(int, string)
+	OnKeyDown func(e *DOMEvent)
 	Focusable *bool
-	TabIndex  *int
 }

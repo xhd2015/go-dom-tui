@@ -56,7 +56,8 @@ type Node struct {
 	EffectCleanups []func()    // Effect cleanup functions
 
 	// DOM extension fields
-	Parent *Node // Parent node for event bubbling
+	Parent *Node   // Parent node for event bubbling
+	Window *Window // Reference to global window state
 }
 
 // Component represents a React-like component function
@@ -75,27 +76,33 @@ type Hook interface {
 
 // DOM represents a DOM-like tree with event handling
 type DOM struct {
-	Root *Node
+	Root   *Node
+	Window *Window
 }
 
 // NewDOM creates a new DOM from a VNode tree
 func NewDOM(root *Node) *DOM {
-	dom := &DOM{}
-	dom.Root = dom.setupVNode(root, nil)
+	dom := &DOM{
+		Window: &Window{},
+	}
+
+	dom.Root = dom.setupVNode(root, nil, dom.Window)
+
 	return dom
 }
 
 // setupVNode recursively sets up VNodes with DOM functionality
-func (d *DOM) setupVNode(vnode *Node, parent *Node) *Node {
+func (d *DOM) setupVNode(vnode *Node, parent *Node, window *Window) *Node {
 	if vnode == nil {
 		return nil
 	}
 
 	vnode.Parent = parent
+	vnode.Window = window // Set window reference on all nodes
 
 	// Setup children
 	for _, child := range vnode.Children {
-		d.setupVNode(child, vnode)
+		d.setupVNode(child, vnode, window)
 	}
 
 	return vnode
@@ -103,32 +110,33 @@ func (d *DOM) setupVNode(vnode *Node, parent *Node) *Node {
 
 // DispatchEvent dispatches an event to the focused node and bubbles it up
 func (d *DOM) DispatchEvent(eventType string, key string, model interface{}) interface{} {
-	focusedNode := d.Root.FindFocused()
-	if focusedNode == nil {
-		log.Logf("DOM: DispatchEvent - no focused node")
-		return nil
+	eventNode := d.Root.FindFocused()
+	if eventNode == nil {
+		log.Logf("DOM: DispatchEvent - no focused node, fallback to root node")
+		// if no focused node, just send to root node
+		eventNode = d.Root
 	}
 
-	log.Logf("DOM: DispatchEvent %s key='%s' to focused node %s", eventType, key, focusedNode.Type)
+	log.Logf("DOM: DispatchEvent %s key='%s' to focused node %s", eventType, key, eventNode.Type)
 
 	// Create the event
 	event := &DOMEvent{
 		Type:          eventType,
-		Target:        focusedNode,
-		CurrentTarget: focusedNode,
+		Target:        eventNode,
+		CurrentTarget: eventNode,
 		Key:           key,
 		BubblePhase:   false,
 	}
 
 	// Handle the event at the target and bubble up
-	result := d.handleEventBubbling(focusedNode, event)
+	result := d.handleEventBubbling(eventNode, event)
 	log.Logf("DOM: DispatchEvent result: %v", result)
 	return result
 }
 
 // handleEventBubbling handles event bubbling up the DOM tree
 func (d *DOM) handleEventBubbling(node *Node, event *DOMEvent) interface{} {
-	if node == nil || event.StopPropagation {
+	if node == nil || event.PropagationStopped {
 		log.Logf("DOM: handleEventBubbling - node is nil or event stopped")
 		return nil
 	}
@@ -139,18 +147,14 @@ func (d *DOM) handleEventBubbling(node *Node, event *DOMEvent) interface{} {
 	handler := node.GetEventHandler(event.Type)
 
 	var handleResult interface{}
-	var preventDefault bool
 	if handler != nil {
 		result := handler(event)
 		if result != nil {
 			handleResult = result
 		}
-		if event.DefaultPrevented {
-			preventDefault = true
-		}
 	}
 
-	if !preventDefault {
+	if !event.DefaultPrevented {
 		if event.Type == "keydown" {
 			switch event.Key {
 			case "up", "down":
@@ -166,7 +170,7 @@ func (d *DOM) handleEventBubbling(node *Node, event *DOMEvent) interface{} {
 			case "left", "right":
 				// move inside the input
 				if node.Type == "input" {
-					props := ExtractProps[InputComponentProps](node.Props)
+					props := ExtractProps[InputProps](node.Props)
 					if props.OnCursorMove != nil {
 						delta := 1
 						if event.Key == "left" {
@@ -178,7 +182,7 @@ func (d *DOM) handleEventBubbling(node *Node, event *DOMEvent) interface{} {
 			default:
 				// handle input
 				if node.Type == "input" {
-					props := ExtractProps[InputComponentProps](node.Props)
+					props := ExtractProps[InputProps](node.Props)
 
 					// Get current value from the model if available, otherwise from props
 					currentValue := props.Value
@@ -202,15 +206,15 @@ func (d *DOM) handleEventBubbling(node *Node, event *DOMEvent) interface{} {
 
 	// If event wasn't stopped, bubble to parent
 	log.Logf("DOM: handleEventBubbling - checking bubbling conditions: stopPropagation=%t, hasParent=%t",
-		event.StopPropagation, node.Parent != nil)
-	if !event.StopPropagation && node.Parent != nil {
+		event.PropagationStopped, node.Parent != nil)
+	if !event.PropagationStopped && node.Parent != nil {
 		log.Logf("DOM: handleEventBubbling - bubbling to parent %s", node.Parent.Type)
 		event.BubblePhase = true
 		return d.handleEventBubbling(node.Parent, event)
 	}
 
 	log.Logf("DOM: handleEventBubbling - reached end of bubbling chain (stopPropagation=%t, hasParent=%t)",
-		event.StopPropagation, node.Parent != nil)
+		event.PropagationStopped, node.Parent != nil)
 	return handleResult
 }
 
@@ -299,8 +303,56 @@ func (d *DOM) HandleFocusNavigation(event *DOMEvent, direction int) bool {
 
 	// Prevent default and stop propagation since we handled the event
 	event.PreventDefault()
-	event.StopPropagationFunc()
+	event.StopPropagation()
 	log.Logf("DOM: HandleFocusNavigation - event handled, prevented default and stopped propagation")
 
 	return true
+}
+
+// DispatchWindowEvent dispatches window-level events (like resize) to the DOM tree
+func (d *DOM) DispatchWindowEvent(eventType string, windowEvent *WindowResizeEvent) interface{} {
+	log.Logf("DOM: DispatchWindowEvent %s - %dx%d", eventType, windowEvent.Width, windowEvent.Height)
+
+	// Create window event that targets the root
+	event := &DOMEvent{
+		Type:          eventType,
+		Target:        d.Root,
+		CurrentTarget: d.Root,
+		WindowEvent:   windowEvent,
+		BubblePhase:   false,
+	}
+
+	// Handle at root level and propagate to interested components
+	return d.handleWindowEventPropagation(d.Root, event)
+}
+
+// handleWindowEventPropagation propagates window events through the DOM tree
+func (d *DOM) handleWindowEventPropagation(node *Node, event *DOMEvent) interface{} {
+	if node == nil {
+		return nil
+	}
+
+	// Set current target
+	event.CurrentTarget = node
+
+	// Check if this node has a window event handler
+	var handleResult interface{}
+	if handler := node.GetEventHandler(event.Type); handler != nil {
+		result := handler(event)
+		if result != nil {
+			handleResult = result
+		}
+	}
+
+	// Propagate to all children (not bubbling, but broadcasting)
+	for _, child := range node.Children {
+		if child != nil {
+			childResult := d.handleWindowEventPropagation(child, event)
+			if childResult != nil && handleResult == nil {
+				handleResult = childResult
+			}
+		}
+	}
+
+	return handleResult
 }

@@ -2,8 +2,10 @@ package log
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -12,7 +14,7 @@ var (
 )
 
 type Logger interface {
-	Log(format string, args ...interface{})
+	Logf(format string, args ...interface{})
 }
 
 // SetLogger sets the debug log file
@@ -34,6 +36,22 @@ func Logf(format string, args ...interface{}) {
 		baseFile := filepath.Base(file)
 		timestamp := time.Now().Format("2006-01-02 15:04:05.000")
 		message := fmt.Sprintf(format, args...)
-		logger.Log(fmt.Sprintf("[%s] %s:%d DEBUG: %s", timestamp, baseFile, line, message))
+		logger.Logf("["+timestamp+"] %s:%d DEBUG: %s", baseFile, line, message)
+	}
+}
+
+func NewFileLogger(file *os.File) *fileLogger {
+	return &fileLogger{file: file}
+}
+
+type fileLogger struct {
+	file *os.File
+}
+
+func (l *fileLogger) Logf(format string, args ...interface{}) {
+	msg := fmt.Sprintf(format, args...)
+	l.file.Write([]byte(msg))
+	if !strings.HasSuffix(msg, "\n") {
+		l.file.Write([]byte("\n"))
 	}
 }

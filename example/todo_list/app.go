@@ -93,7 +93,7 @@ func App(props *AppState) *dom.Node {
 	}
 
 	return dom.Div(dom.DivProps{
-		Style: "main-app",
+		Style: dom.Style{}, // No border by default
 		OnKeyDown: func(event *dom.DOMEvent) {
 			if event.Key == "ctrl+c" {
 				if time.Since(props.LastCtrlCTime) < CtrlCTimeoutMs*time.Millisecond {
@@ -110,6 +110,13 @@ func App(props *AppState) *dom.Node {
 				props.LastCtrlCTime = time.Now()
 			}
 		},
+		OnWindowResize: func(event *dom.DOMEvent) {
+			width, height := event.WindowEvent.Width, event.WindowEvent.Height
+			log.Logf("App: window resized to %dx%d", width, height)
+
+			// Update status to show current window size
+			props.Status = fmt.Sprintf("📐 Terminal: %dx%d", width, height)
+		},
 	},
 		// Header
 		dom.H1(dom.DivProps{}, dom.Text("🎯 Quick Todo")),
@@ -124,11 +131,11 @@ func App(props *AppState) *dom.Node {
 
 		// Quick input section with actual textinput component
 		dom.Div(dom.DivProps{
-			Style: "quick-input",
+			Style: dom.Style{}, // No border by default
 		},
 			dom.P(dom.DivProps{}, dom.Text("Type a task and press Enter:")),
 			// Use direct input element
-			dom.Input(dom.InputComponentProps{
+			dom.Input(dom.InputProps{
 				Placeholder:    "What needs to be done?",
 				Value:          props.InputValue,
 				Focused:        props.InputFocused,
@@ -153,10 +160,8 @@ func App(props *AppState) *dom.Node {
 		func() *dom.Node {
 			if time.Since(props.LastCtrlCTime) < CtrlCTimeoutMs*time.Millisecond {
 
-				// red color
-				return dom.P(dom.DivProps{
-					Style: "red",
-				}, dom.Text("Ctrl-C again to quit."))
+				// red color - need to handle this differently since it's not a div style
+				return dom.P(dom.DivProps{}, dom.Text("Ctrl-C again to quit."))
 			}
 			return nil
 		}(),

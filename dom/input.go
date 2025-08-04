@@ -31,6 +31,9 @@ func UpdateInputValue(currentValue string, pos int, key string) (string, int) {
 	switch key {
 	case "backspace":
 		if len(currentValue) > 0 {
+			if pos > len(currentValue) {
+				return currentValue, pos - 1
+			}
 			if pos > 0 {
 				return currentValue[:pos-1] + currentValue[pos:], pos - 1
 			} else {
@@ -49,6 +52,15 @@ func UpdateInputValue(currentValue string, pos int, key string) (string, int) {
 		return currentValue, pos
 	case "ctrl+w":
 		return handleDeleteBackWord(currentValue, pos)
+	case "ctrl+a":
+		return currentValue, 0
+	case "ctrl+e":
+		return currentValue, len(currentValue)
+	case "ctrl+k":
+		if pos < len(currentValue) {
+			return currentValue[:pos], pos
+		}
+		return currentValue, pos
 	case "enter", "tab", "escape", "up", "down", "left", "right":
 		// Navigation keys don't change the value
 		return currentValue, pos

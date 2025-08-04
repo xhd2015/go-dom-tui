@@ -17,87 +17,23 @@ type InteractiveCharmRenderer struct {
 	styles CharmStyles
 }
 
-// CharmStyles holds various lipgloss styles for rendering
-type CharmStyles struct {
-	Title          lipgloss.Style
-	Subtitle       lipgloss.Style
-	Text           lipgloss.Style
-	Button         lipgloss.Style
-	Container      lipgloss.Style
-	CompactDiv     lipgloss.Style
-	CompactText    lipgloss.Style
-	CompactSuccess lipgloss.Style
-	Input          lipgloss.Style
-	Prompt         lipgloss.Style
-	Success        lipgloss.Style
-	Error          lipgloss.Style
-}
-
 // NewInteractiveCharmRenderer creates a new interactive renderer with styled components
 func NewInteractiveCharmRenderer() *InteractiveCharmRenderer {
 	return &InteractiveCharmRenderer{
-		styles: CharmStyles{
-			Title: lipgloss.NewStyle().
-				Bold(true).
-				Foreground(lipgloss.Color("#FAFAFA")).
-				Background(lipgloss.Color("#7D56F4")).
-				Padding(0, 2).
-				Margin(1, 0),
-			Subtitle: lipgloss.NewStyle().
-				Bold(true).
-				Foreground(lipgloss.Color("#FFF7DB")).
-				Background(lipgloss.Color("#F25D94")).
-				Padding(0, 1).
-				Margin(0, 0),
-			Text: lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#626262")).
-				Margin(0, 1),
-			Button: lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#FFF")).
-				Background(lipgloss.Color("#04B575")).
-				Padding(0, 3).
-				Margin(0, 1).
-				Bold(true),
-			Container: lipgloss.NewStyle().
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("#874BFD")).
-				Padding(2, 3).
-				Margin(1, 0),
-			CompactDiv: lipgloss.NewStyle().
-				Padding(0, 0).
-				Margin(0, 0),
-			CompactText: lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#626262")).
-				Margin(0, 0),
-			CompactSuccess: lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#00FF00")).
-				Bold(true).
-				Margin(0, 0),
-			Input: lipgloss.NewStyle().
-				Border(lipgloss.NormalBorder()).
-				BorderForeground(lipgloss.Color("#04B575")).
-				Padding(0, 1).
-				Margin(0, 1).
-				Width(40),
-			Prompt: lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#FFFF00")).
-				Bold(true).
-				Margin(0, 1),
-			Success: lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#00FF00")).
-				Bold(true).
-				Margin(0, 1),
-			Error: lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#FF0000")).
-				Bold(true).
-				Margin(0, 1),
-		},
+		styles: defaultStyles(),
 	}
 }
 
 // Render renders a VNode using Charm CLI styling
 func (cr *InteractiveCharmRenderer) Render(vnode *dom.Node) string {
 	cr.output = ""
+
+	// Update styles based on window size from VNode
+	if vnode != nil && vnode.Window != nil {
+		width, height := vnode.Window.Get()
+		cr.updateStylesForWindowSize(width, height)
+	}
+
 	cr.renderNode(vnode, 0)
 	return cr.output
 }
@@ -110,11 +46,7 @@ func (cr *InteractiveCharmRenderer) renderNode(vnode *dom.Node, depth int) {
 
 	switch vnode.Type {
 	case "text":
-		if value, ok := vnode.Props.Get("text"); ok {
-			if textValue, ok := value.(string); ok {
-				cr.output += textValue
-			}
-		}
+		cr.renderTextNode(vnode)
 	case "div":
 		cr.renderContainer(vnode, depth)
 	case "h1":
@@ -131,12 +63,18 @@ func (cr *InteractiveCharmRenderer) renderNode(vnode *dom.Node, depth int) {
 		cr.renderList(vnode, depth)
 	case "li":
 		cr.renderListItem(vnode)
+	case "br":
+		cr.renderBr(vnode)
 	case "component":
-		cr.renderComponent(vnode)
+		panic("component is deprecated")
 	default:
 		log.Logf("renderNode called for unknown type: %s, depth: %d", vnode.Type, depth)
 		cr.renderDefault(vnode, depth)
 	}
+}
+
+func (cr *InteractiveCharmRenderer) renderBr(vnode *dom.Node) {
+	cr.output += "\n"
 }
 
 // renderContainer renders a container div with border
@@ -149,21 +87,23 @@ func (cr *InteractiveCharmRenderer) renderContainer(vnode *dom.Node, depth int) 
 		content.WriteString(childRenderer.output)
 	}
 
-	// Check for specific style names to use compact styling
+	// Handle style object or fallback to old string-based styling
 	var style lipgloss.Style
 	if styleValue, ok := vnode.Props.Get("style"); ok {
-		if styleName, ok := styleValue.(string); ok {
-			switch styleName {
-			case "main-app", "quick-input", "todo-display":
-				style = cr.styles.CompactDiv
-			default:
-				style = cr.styles.Container
+		if divStyle, ok := styleValue.(dom.Style); ok {
+			// New object-based styling
+			if divStyle.BorderColor != "" {
+				// Use container with custom border color
+				style = cr.styles.Container.BorderForeground(lipgloss.Color(divStyle.BorderColor))
+			} else {
+				// No border specified, use no-border style
+				style = cr.styles.NoBorderDiv
 			}
 		} else {
-			style = cr.styles.Container
+			style = cr.styles.NoBorderDiv // Default to no border
 		}
 	} else {
-		style = cr.styles.Container
+		style = cr.styles.NoBorderDiv // Default to no border
 	}
 
 	rendered := style.Render(content.String())
@@ -172,8 +112,39 @@ func (cr *InteractiveCharmRenderer) renderContainer(vnode *dom.Node, depth int) 
 
 // renderTitle renders an h1 element
 func (cr *InteractiveCharmRenderer) renderTitle(vnode *dom.Node) {
+	cr.renderNodeText(vnode)
+}
+
+func (cr *InteractiveCharmRenderer) getNodeStyle(vnode *dom.Node) lipgloss.Style {
+	baseStyle := cr.styles.NoBorderDiv
+	switch vnode.Type {
+	case "h1":
+		baseStyle = cr.styles.Title
+	case "h2":
+		baseStyle = cr.styles.Subtitle
+	case "p":
+		baseStyle = cr.styles.Text
+	case "button":
+		baseStyle = cr.styles.Button
+	case "input":
+		baseStyle = cr.styles.Input
+	case "li":
+		baseStyle = cr.styles.CompactText
+	case "text":
+		baseStyle = cr.styles.Text
+	}
+	if styleValue, ok := vnode.Props.Get("style"); ok {
+		if divStyle, ok := styleValue.(dom.Style); ok {
+			baseStyle = domStyleToCharmStyle(baseStyle, divStyle)
+		}
+	}
+	return baseStyle
+}
+
+func (cr *InteractiveCharmRenderer) renderNodeText(vnode *dom.Node) {
 	text := cr.extractText(vnode)
-	rendered := cr.styles.Title.Render(text)
+	style := cr.getNodeStyle(vnode)
+	rendered := style.Render(text)
 	cr.output += rendered + "\n"
 }
 
@@ -186,9 +157,7 @@ func (cr *InteractiveCharmRenderer) renderSubtitle(vnode *dom.Node) {
 
 // renderText renders a p element
 func (cr *InteractiveCharmRenderer) renderText(vnode *dom.Node) {
-	text := cr.extractText(vnode)
-	rendered := cr.styles.Text.Render(text)
-	cr.output += rendered + "\n"
+	cr.renderNodeText(vnode)
 }
 
 // renderButton renders a button element
@@ -200,8 +169,8 @@ func (cr *InteractiveCharmRenderer) renderButton(vnode *dom.Node) {
 
 // renderInput renders an input element using Charm's textinput component
 func (cr *InteractiveCharmRenderer) renderInput(vnode *dom.Node) {
-	// Cast props to InputComponentProps to avoid using GetOK, Get etc.
-	inputProps := dom.ExtractProps[dom.InputComponentProps](vnode.Props)
+	// Cast props to InputProps to avoid using GetOK, Get etc.
+	inputProps := dom.ExtractProps[dom.InputProps](vnode.Props)
 
 	// Render input using static styling (no live textinput component)
 
@@ -235,7 +204,6 @@ func (cr *InteractiveCharmRenderer) renderInput(vnode *dom.Node) {
 	ti.PromptStyle = cr.styles.Prompt
 	ti.TextStyle = cr.styles.Text
 	ti.PlaceholderStyle = cr.styles.Text.Foreground(lipgloss.Color("#626262"))
-	ti.Cursor.Style = cr.styles.Success
 
 	// Only call Focus() when the props indicate the element is focused, otherwise call Blur()
 	if inputProps.Focused {
@@ -308,11 +276,7 @@ func (cr *InteractiveCharmRenderer) extractText(vnode *dom.Node) string {
 
 	for _, child := range vnode.Children {
 		if child.Type == "text" {
-			if value, ok := child.Props.Get("text"); ok {
-				if textValue, ok := value.(string); ok {
-					text.WriteString(textValue)
-				}
-			}
+			text.WriteString(child.Text)
 		} else {
 			text.WriteString(cr.extractText(child))
 		}
@@ -321,7 +285,50 @@ func (cr *InteractiveCharmRenderer) extractText(vnode *dom.Node) string {
 	return text.String()
 }
 
+func (cr *InteractiveCharmRenderer) renderTextNode(vnode *dom.Node) {
+	text := vnode.Text
+	if text == "" {
+		return
+	}
+	style := cr.getNodeStyle(vnode)
+	rendered := style.Render(text)
+	cr.output += rendered
+}
+
 // ApplyPatch applies a patch to update the rendered output
 func (cr *InteractiveCharmRenderer) ApplyPatch(patch react.Patch, currentOutput string) string {
 	return currentOutput + fmt.Sprintf("<!-- Patch applied: %v -->\n", patch.Type)
+}
+
+// updateStylesForWindowSize adjusts styles based on provided terminal dimensions
+func (cr *InteractiveCharmRenderer) updateStylesForWindowSize(width, height int) {
+	// Only adjust if we have valid window dimensions
+	if width > 0 {
+		// Adjust input width to be responsive
+		inputWidth := width - 8 // Leave some margin (reduced from 10 to 8)
+		if inputWidth > 80 {
+			inputWidth = 80 // Max width cap (increased from 50 to 80)
+		}
+		if inputWidth < 30 {
+			inputWidth = 30 // Min width (increased from 20 to 30)
+		}
+
+		cr.styles.Input = cr.styles.Input.Width(inputWidth)
+
+		// Set container to use full window width
+		containerWidth := width - 2 // Leave minimal margin for border
+		if containerWidth > 0 {
+			cr.styles.Container = cr.styles.Container.Width(containerWidth).Margin(0, 0)
+
+			// Adjust padding for smaller terminals
+			if width < 80 {
+				cr.styles.Container = cr.styles.Container.Padding(1, 2)
+			} else {
+				cr.styles.Container = cr.styles.Container.Padding(2, 3)
+			}
+		}
+	}
+
+	// Adjust for height if needed (future enhancement)
+	_ = height
 }

@@ -57,12 +57,11 @@ func TodoListDisplay(props TodoListDisplayProps) *dom.Node {
 				}
 			},
 			Focusable: dom.Focusable(true),
-			TabIndex:  dom.TabIndex(i + 1), // Start from 1, input gets 0
 		})
 	}
 
 	return dom.Div(dom.DivProps{
-		Style: "todo-display",
+		Style: dom.Style{}, // No border by default
 	},
 		dom.H2(dom.DivProps{}, dom.Text("📋 Current Tasks")),
 		dom.Ul(dom.DivProps{}, todoElements...),
