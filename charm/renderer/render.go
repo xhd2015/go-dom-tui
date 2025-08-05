@@ -221,12 +221,6 @@ func (cr *InteractiveCharmRenderer) renderInput(vnode *dom.Node) {
 	cr.output += rendered + "\n"
 }
 
-// renderComponent renders a component
-func (cr *InteractiveCharmRenderer) renderComponent(vnode *dom.Node) {
-	log.Logf("renderComponent called, type: %s", vnode.Type)
-	cr.renderNode(vnode.Children[0], 0)
-}
-
 // renderList renders a ul element
 func (cr *InteractiveCharmRenderer) renderList(vnode *dom.Node, depth int) {
 	for _, child := range vnode.Children {
