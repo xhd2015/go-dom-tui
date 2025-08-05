@@ -150,7 +150,7 @@ func (cr *InteractiveCharmRenderer) getNodeStyle(vnode *dom.Node) lipgloss.Style
 }
 
 func (cr *InteractiveCharmRenderer) renderNodeText(vnode *dom.Node) {
-	text := cr.extractText(vnode)
+	text := cr.extractRenderedText(vnode)
 	style := cr.getNodeStyle(vnode)
 	rendered := style.Render(text)
 	cr.output += rendered + "\n"
@@ -158,7 +158,7 @@ func (cr *InteractiveCharmRenderer) renderNodeText(vnode *dom.Node) {
 
 // renderSubtitle renders an h2 element
 func (cr *InteractiveCharmRenderer) renderSubtitle(vnode *dom.Node) {
-	text := cr.extractText(vnode)
+	text := cr.extractRenderedText(vnode)
 	rendered := cr.styles.Subtitle.Render(text)
 	cr.output += rendered + "\n"
 }
@@ -170,7 +170,7 @@ func (cr *InteractiveCharmRenderer) renderText(vnode *dom.Node) {
 
 // renderButton renders a button element
 func (cr *InteractiveCharmRenderer) renderButton(vnode *dom.Node) {
-	text := cr.extractText(vnode)
+	text := cr.extractRenderedText(vnode)
 	rendered := cr.styles.Button.Render(text)
 	cr.output += rendered + "\n"
 }
@@ -210,8 +210,8 @@ func (cr *InteractiveCharmRenderer) renderInput(vnode *dom.Node) {
 
 	// Style the textinput to match our theme
 	ti.PromptStyle = cr.styles.Prompt
-	ti.TextStyle = cr.styles.Text
-	ti.PlaceholderStyle = cr.styles.Text.Foreground(lipgloss.Color("#626262"))
+	ti.TextStyle = cr.styles.InputText
+	ti.PlaceholderStyle = cr.styles.Text.Foreground(lipgloss.Color("#626262")).Italic(true)
 
 	// Only call Focus() when the props indicate the element is focused, otherwise call Blur()
 	if inputProps.Focused {
@@ -248,15 +248,17 @@ func (cr *InteractiveCharmRenderer) renderList(vnode *dom.Node, depth int) {
 func (cr *InteractiveCharmRenderer) renderListItem(vnode *dom.Node) {
 	props := dom.ExtractProps[dom.ListItemProps](vnode.Props)
 
-	text := props.Text
-	if text == "" {
-		text = cr.extractText(vnode)
-	}
+	text := cr.extractRenderedText(vnode)
 
-	prefix := "• "
-	if props.Selected {
-		// For focused items, use "> " prefix instead of bullet
-		prefix = "> "
+	var prefix string
+	if props.ItemPrefix != nil {
+		prefix = *props.ItemPrefix
+	} else {
+		prefix = "• "
+		if props.Selected {
+			// For focused items, use "> " prefix instead of bullet
+			prefix = "> "
+		}
 	}
 	renderedText := prefix + text
 
@@ -279,28 +281,31 @@ func (cr *InteractiveCharmRenderer) renderDefault(vnode *dom.Node, depth int) {
 }
 
 // extractText extracts text content from a VNode
-func (cr *InteractiveCharmRenderer) extractText(vnode *dom.Node) string {
+func (cr *InteractiveCharmRenderer) extractRenderedText(vnode *dom.Node) string {
 	var text strings.Builder
 
 	for _, child := range vnode.Children {
 		if child.Type == "text" {
-			text.WriteString(child.Text)
+			text.WriteString(cr.extractTextNode(child))
 		} else {
-			text.WriteString(cr.extractText(child))
+			text.WriteString(cr.extractRenderedText(child))
 		}
 	}
 
 	return text.String()
 }
 
-func (cr *InteractiveCharmRenderer) renderTextNode(vnode *dom.Node) {
+func (cr *InteractiveCharmRenderer) extractTextNode(vnode *dom.Node) string {
 	text := vnode.Text
 	if text == "" {
-		return
+		return ""
 	}
 	style := cr.getNodeStyle(vnode)
-	rendered := style.Render(text)
-	cr.output += rendered
+	return style.Render(text)
+
+}
+func (cr *InteractiveCharmRenderer) renderTextNode(vnode *dom.Node) {
+	cr.output += cr.extractTextNode(vnode)
 }
 
 // ApplyPatch applies a patch to update the rendered output

@@ -11,6 +11,7 @@ type CharmStyles struct {
 	Title          lipgloss.Style
 	Subtitle       lipgloss.Style
 	Text           lipgloss.Style
+	InputText      lipgloss.Style
 	Button         lipgloss.Style
 	Container      lipgloss.Style
 	CompactDiv     lipgloss.Style
@@ -69,6 +70,8 @@ func defaultStyles() CharmStyles {
 			Padding(0, 1).
 			Margin(0, 1).
 			Width(60),
+		InputText: lipgloss.NewStyle().
+			Margin(0, 1),
 		Prompt: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFFF00")).
 			Bold(true).

@@ -200,15 +200,19 @@ type InputProps struct {
 func Focusable(value bool) *bool {
 	return &value
 }
+func String(value string) *string {
+	return &value
+}
 
 // ListItemProps represents props for focusable li elements
 type ListItemProps struct {
-	Text      string
-	Index     int
-	Selected  bool
-	Focused   bool
-	OnFocus   func()
-	OnBlur    func()
-	OnKeyDown func(e *DOMEvent)
-	Focusable *bool
+	Style      Style
+	Index      int
+	Selected   bool
+	ItemPrefix *string
+	Focused    bool
+	OnFocus    func()
+	OnBlur     func()
+	OnKeyDown  func(e *DOMEvent)
+	Focusable  *bool
 }
