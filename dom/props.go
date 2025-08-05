@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/xhd2015/go-dom-tui/styles"
 )
 
 func ExtractProps[T any](props Props) T {
@@ -112,7 +114,7 @@ func GetStringProp(props Props, key string) string {
 }
 
 type TextNodeProps struct {
-	Style     Style
+	Style     styles.Style
 	Focused   bool
 	Focusable bool
 
@@ -130,7 +132,7 @@ type ButtonProps struct {
 
 // DivProps represents props for div elements
 type DivProps struct {
-	Style Style
+	Style styles.Style
 
 	OnKeyDown      func(*DOMEvent)
 	OnWindowResize func(*DOMEvent)
@@ -206,7 +208,7 @@ func String(value string) *string {
 
 // ListItemProps represents props for focusable li elements
 type ListItemProps struct {
-	Style      Style
+	Style      styles.Style
 	Index      int
 	Selected   bool
 	ItemPrefix *string

@@ -3,7 +3,7 @@ package renderer
 import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/xhd2015/go-dom-tui/colors"
-	"github.com/xhd2015/go-dom-tui/dom"
+	"github.com/xhd2015/go-dom-tui/styles"
 )
 
 // CharmStyles holds various lipgloss styles for rendering
@@ -88,12 +88,15 @@ func defaultStyles() CharmStyles {
 }
 
 // dom style to charm style
-func domStyleToCharmStyle(base lipgloss.Style, style dom.Style) lipgloss.Style {
+func domStyleToCharmStyle(base lipgloss.Style, style styles.Style) lipgloss.Style {
 	if style.Color != "" {
 		base = base.Foreground(lipgloss.Color(style.Color))
 	}
 	if style.BackgroundColor != "" {
 		base = base.Background(lipgloss.Color(style.BackgroundColor))
+	}
+	if style.BorderRouned {
+		base = base.Border(lipgloss.RoundedBorder())
 	}
 	if style.BorderColor != "" {
 		base = base.BorderForeground(lipgloss.Color(style.BorderColor))
@@ -110,5 +113,34 @@ func domStyleToCharmStyle(base lipgloss.Style, style dom.Style) lipgloss.Style {
 	if style.Strikethrough {
 		base = base.Strikethrough(true)
 	}
+	if style.PaddingLeft != nil {
+		base = base.PaddingLeft(*style.PaddingLeft)
+	}
+	if style.PaddingRight != nil {
+		base = base.PaddingRight(*style.PaddingRight)
+	}
+	if style.PaddingTop != nil {
+		base = base.PaddingTop(*style.PaddingTop)
+	}
+	if style.PaddingBottom != nil {
+		base = base.PaddingBottom(*style.PaddingBottom)
+	}
+
+	if style.MarginLeft != nil {
+		base = base.MarginLeft(*style.MarginLeft)
+	}
+	if style.MarginRight != nil {
+		base = base.MarginRight(*style.MarginRight)
+	}
+	if style.MarginTop != nil {
+		base = base.MarginTop(*style.MarginTop)
+	}
+	if style.MarginBottom != nil {
+		base = base.MarginBottom(*style.MarginBottom)
+	}
+	if style.FontSize != 0 {
+		base = base.Inline(true).Width(style.FontSize)
+	}
+
 	return base
 }

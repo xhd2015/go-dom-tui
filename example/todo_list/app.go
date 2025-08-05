@@ -6,6 +6,7 @@ import (
 
 	"github.com/xhd2015/go-dom-tui/dom"
 	"github.com/xhd2015/go-dom-tui/log"
+	"github.com/xhd2015/go-dom-tui/styles"
 )
 
 const (
@@ -93,7 +94,7 @@ func App(props *AppState, window *dom.Window) *dom.Node {
 	}
 
 	return dom.Div(dom.DivProps{
-		Style: dom.Style{}, // No border by default
+		Style: styles.Style{}, // No border by default
 		OnKeyDown: func(event *dom.DOMEvent) {
 			if event.Key == "ctrl+c" {
 				if time.Since(props.LastCtrlCTime) < CtrlCTimeoutMs*time.Millisecond {
@@ -131,7 +132,7 @@ func App(props *AppState, window *dom.Window) *dom.Node {
 
 		// Quick input section with actual textinput component
 		dom.Div(dom.DivProps{
-			Style: dom.Style{}, // No border by default
+			Style: styles.Style{}, // No border by default
 		},
 			dom.P(dom.DivProps{}, dom.Text("Type a task and press Enter:")),
 			// Use direct input element

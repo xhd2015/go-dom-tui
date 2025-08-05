@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/xhd2015/go-dom-tui/dom"
+	"github.com/xhd2015/go-dom-tui/styles"
 )
 
 // TodoItem represents a todo item
@@ -43,7 +44,6 @@ func TodoListDisplay(props TodoListDisplayProps) *dom.Node {
 
 		// Create focusable li element with callbacks
 		todoElements[i] = dom.Li(dom.ListItemProps{
-			Text:    todoText,
 			Index:   i,
 			Focused: i == selectedIndex,
 			OnFocus: func() {
@@ -57,11 +57,11 @@ func TodoListDisplay(props TodoListDisplayProps) *dom.Node {
 				}
 			},
 			Focusable: dom.Focusable(true),
-		})
+		}, dom.Text(todoText))
 	}
 
 	return dom.Div(dom.DivProps{
-		Style: dom.Style{}, // No border by default
+		Style: styles.Style{}, // No border by default
 	},
 		dom.H2(dom.DivProps{}, dom.Text("📋 Current Tasks")),
 		dom.Ul(dom.DivProps{}, todoElements...),

@@ -1,5 +1,9 @@
 package dom
 
+import (
+	"github.com/xhd2015/go-dom-tui/styles"
+)
+
 // CreateNode creates a virtual element (like React.createElement)
 func CreateNode(typ string, props Props, children ...*Node) *Node {
 	return &Node{
@@ -15,13 +19,13 @@ func CreateComponent(component Component, props Props, children ...*Node) *Node 
 }
 
 // Text creates a text node
-func Text(text string, styles ...Style) *Node {
-	style := Style{}
-	if len(styles) > 0 {
-		if len(styles) > 1 {
+func Text(text string, styleList ...styles.Style) *Node {
+	style := styles.Style{}
+	if len(styleList) > 0 {
+		if len(styleList) > 1 {
 			panic("only one style is allowed")
 		}
-		style = styles[0]
+		style = styleList[0]
 	}
 	return &Node{
 		Type:  "text",

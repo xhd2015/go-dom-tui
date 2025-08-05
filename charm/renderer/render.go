@@ -9,6 +9,7 @@ import (
 	"github.com/xhd2015/go-dom-tui/dom"
 	"github.com/xhd2015/go-dom-tui/log"
 	"github.com/xhd2015/go-dom-tui/react"
+	"github.com/xhd2015/go-dom-tui/styles"
 )
 
 // InteractiveCharmRenderer implements the Renderer interface with user interaction
@@ -95,24 +96,7 @@ func (cr *InteractiveCharmRenderer) renderContainer(vnode *dom.Node, depth int) 
 		content.WriteString(childRenderer.output)
 	}
 
-	// Handle style object or fallback to old string-based styling
-	var style lipgloss.Style
-	if styleValue, ok := vnode.Props.Get("style"); ok {
-		if divStyle, ok := styleValue.(dom.Style); ok {
-			// New object-based styling
-			if divStyle.BorderColor != "" {
-				// Use container with custom border color
-				style = cr.styles.Container.BorderForeground(lipgloss.Color(divStyle.BorderColor))
-			} else {
-				// No border specified, use no-border style
-				style = cr.styles.NoBorderDiv
-			}
-		} else {
-			style = cr.styles.NoBorderDiv // Default to no border
-		}
-	} else {
-		style = cr.styles.NoBorderDiv // Default to no border
-	}
+	style := cr.getNodeStyle(vnode)
 
 	rendered := style.Render(content.String())
 	cr.output += rendered + "\n"
@@ -124,6 +108,18 @@ func (cr *InteractiveCharmRenderer) renderTitle(vnode *dom.Node) {
 }
 
 func (cr *InteractiveCharmRenderer) getNodeStyle(vnode *dom.Node) lipgloss.Style {
+	var nodeStyle styles.Style
+	var hasNodeStyle bool
+	if styleValue, ok := vnode.Props.Get("style"); ok {
+		if propStyle, ok := styleValue.(styles.Style); ok {
+			if propStyle.NoDefault {
+				return domStyleToCharmStyle(lipgloss.NewStyle(), propStyle)
+			}
+			nodeStyle = propStyle
+			hasNodeStyle = true
+		}
+	}
+
 	baseStyle := cr.styles.NoBorderDiv
 	switch vnode.Type {
 	case "h1":
@@ -141,11 +137,11 @@ func (cr *InteractiveCharmRenderer) getNodeStyle(vnode *dom.Node) lipgloss.Style
 	case "text":
 		baseStyle = cr.styles.Text
 	}
-	if styleValue, ok := vnode.Props.Get("style"); ok {
-		if divStyle, ok := styleValue.(dom.Style); ok {
-			baseStyle = domStyleToCharmStyle(baseStyle, divStyle)
-		}
+
+	if hasNodeStyle {
+		return domStyleToCharmStyle(baseStyle, nodeStyle)
 	}
+
 	return baseStyle
 }
 
