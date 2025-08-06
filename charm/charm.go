@@ -26,13 +26,55 @@ func NewCharmApp[T any](state *T, app func(state *T, window *dom.Window) *dom.No
 	}
 }
 
-func (c *CharmApp[T]) Update(msg tea.Msg) interface{} {
+func (c *CharmApp[T]) Update(msg tea.Msg) {
 	log.Logf("Update: %T", msg)
-	var res interface{}
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		log.Logf("Key Msg %v: alt=%v, paste=%v, len(runes)=%v", msg.Type, msg.Alt, msg.Paste, len(msg.Runes))
 		if c.dom != nil {
-			res = c.dom.DispatchEvent("keydown", msg.String(), c)
+			var keyType dom.KeyType
+			switch msg.Type {
+			case tea.KeyUp:
+				keyType = dom.KeyTypeUp
+			case tea.KeyDown:
+				keyType = dom.KeyTypeDown
+			case tea.KeyLeft:
+				keyType = dom.KeyTypeLeft
+			case tea.KeyRight:
+				keyType = dom.KeyTypeRight
+			case tea.KeyEnter:
+				keyType = dom.KeyTypeEnter
+			case tea.KeyBackspace:
+				keyType = dom.KeyTypeBackspace
+			case tea.KeyDelete:
+				keyType = dom.KeyTypeDelete
+			case tea.KeyEscape:
+				keyType = dom.KeyTypeEsc
+			case tea.KeySpace:
+				keyType = dom.KeyTypeSpace
+			case tea.KeyTab:
+				keyType = dom.KeyTypeTab
+			case tea.KeyCtrlC:
+				keyType = dom.KeyTypeCtrlC
+			case tea.KeyCtrlV:
+				keyType = dom.KeyTypeCtrlV
+			case tea.KeyCtrlX:
+				keyType = dom.KeyTypeCtrlX
+			case tea.KeyCtrlW:
+				keyType = dom.KeyTypeCtrlW
+			case tea.KeyCtrlA:
+				keyType = dom.KeyTypeCtrlA
+			case tea.KeyCtrlE:
+				keyType = dom.KeyTypeCtrlE
+			case tea.KeyCtrlK:
+				keyType = dom.KeyTypeCtrlK
+			}
+			c.dom.DispatchKeyDownEvent(&dom.KeydownEvent{
+				KeyType: keyType,
+				Runes:   msg.Runes,
+				Alt:     msg.Alt,
+				Paste:   msg.Paste,
+			})
 		}
 	case tea.WindowSizeMsg:
 		log.Logf("window size: %d x %d", msg.Width, msg.Height)
@@ -50,11 +92,9 @@ func (c *CharmApp[T]) Update(msg tea.Msg) interface{} {
 				Width:  msg.Width,
 				Height: msg.Height,
 			}
-			res = c.dom.DispatchWindowEvent("resize", event)
+			c.dom.DispatchWindowEvent(dom.EventTypeResize, event)
 		}
 	}
-
-	return res
 }
 
 // View renders the current view

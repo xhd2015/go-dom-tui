@@ -45,8 +45,8 @@ func (m *AppState) OnInputBlur() {
 	m.InputFocused = false
 }
 
-func (m *AppState) OnInputCursorMove(delta int, seek int) {
-	newPos := m.InputCursorPosition + delta
+func (m *AppState) OnInputCursorMove(position int) {
+	newPos := position
 	if newPos < 0 {
 		newPos = 0
 	}
@@ -57,10 +57,10 @@ func (m *AppState) OnInputCursorMove(delta int, seek int) {
 }
 
 func (m *AppState) OnInputKeyDown(event *dom.DOMEvent) {
-	log.Logf("Input key down: %s", event.Key)
+	log.Logf("Input key down: %s", event.KeydownEvent.KeyType)
 
-	switch event.Key {
-	case "enter":
+	switch event.KeydownEvent.KeyType {
+	case dom.KeyTypeEnter:
 		// Handle Enter key for input - get current value from model
 		value := m.InputValue
 		if value == "" {
@@ -96,7 +96,7 @@ func App(props *AppState, window *dom.Window) *dom.Node {
 	return dom.Div(dom.DivProps{
 		Style: styles.Style{}, // No border by default
 		OnKeyDown: func(event *dom.DOMEvent) {
-			if event.Key == "ctrl+c" {
+			if event.KeydownEvent.KeyType == dom.KeyTypeCtrlC {
 				if time.Since(props.LastCtrlCTime) < CtrlCTimeoutMs*time.Millisecond {
 					log.Logf("App: quitting by double ctrl-c ")
 					props.Quitting = true
@@ -143,7 +143,7 @@ func App(props *AppState, window *dom.Window) *dom.Node {
 				CursorPosition: props.InputCursorPosition,
 				OnCursorMove:   props.OnInputCursorMove,
 				OnKeyDown: func(d *dom.DOMEvent) {
-					if d.Key == "enter" {
+					if d.KeydownEvent.KeyType == dom.KeyTypeEnter {
 						switch props.InputValue {
 						case "quit", "exit", "q":
 							log.Logf("App: quitting by input %s", props.InputValue)

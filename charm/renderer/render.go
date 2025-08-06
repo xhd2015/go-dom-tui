@@ -174,7 +174,7 @@ func (cr *InteractiveCharmRenderer) renderButton(vnode *dom.Node) {
 // renderInput renders an input element using Charm's textinput component
 func (cr *InteractiveCharmRenderer) renderInput(vnode *dom.Node) {
 	// Cast props to InputProps to avoid using GetOK, Get etc.
-	inputProps := dom.ExtractProps[dom.InputProps](vnode.Props)
+	props := dom.ExtractProps[dom.InputProps](vnode.Props)
 
 	// Render input using static styling (no live textinput component)
 
@@ -184,10 +184,10 @@ func (cr *InteractiveCharmRenderer) renderInput(vnode *dom.Node) {
 	inputType := "text"
 
 	// Use typed props directly instead of GetOK/Get
-	if inputProps.Placeholder != "" {
-		placeholder = inputProps.Placeholder
+	if props.Placeholder != "" {
+		placeholder = props.Placeholder
 	}
-	value = inputProps.Value
+	value = props.Value
 	// inputType remains "text" as there's no Type field in InputComponentProps
 
 	// Create a textinput component
@@ -196,7 +196,8 @@ func (cr *InteractiveCharmRenderer) renderInput(vnode *dom.Node) {
 	ti.SetValue(value)
 	ti.CharLimit = 156
 	ti.Width = 50
-	ti.SetCursor(inputProps.CursorPosition)
+
+	ti.SetCursor(props.CursorPosition)
 
 	// Set password mode if it's a password field
 	if inputType == "password" {
@@ -210,7 +211,7 @@ func (cr *InteractiveCharmRenderer) renderInput(vnode *dom.Node) {
 	ti.PlaceholderStyle = cr.styles.Text.Foreground(lipgloss.Color("#626262")).Italic(true)
 
 	// Only call Focus() when the props indicate the element is focused, otherwise call Blur()
-	if inputProps.Focused {
+	if props.Focused {
 		ti.Focus()
 	} else {
 		ti.Blur()

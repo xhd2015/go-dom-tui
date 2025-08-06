@@ -1,11 +1,11 @@
 package dom
 
-func (c *Node) GetEventHandler(eventType string) EventHandler {
+func (c *Node) GetEventHandler(eventType EventType) EventHandler {
 	if c.Props == nil {
 		return nil
 	}
 
-	h := getPropHandler(c.Props, "on"+eventType)
+	h := getPropHandler(c.Props, "on"+string(eventType))
 	if h != nil {
 		return h
 	}
@@ -30,16 +30,15 @@ func getPropHandler(props Props, key string) EventHandler {
 		return nil
 	}
 
-	fn, ok := handler.(func(event *DOMEvent) interface{})
+	fn, ok := handler.(func(event *DOMEvent))
 	if ok && fn != nil {
 		return fn
 	}
 
 	fnNoRes, ok := handler.(func(event *DOMEvent))
 	if ok && fnNoRes != nil {
-		return func(event *DOMEvent) interface{} {
+		return func(event *DOMEvent) {
 			fnNoRes(event)
-			return nil
 		}
 	}
 

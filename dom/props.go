@@ -186,7 +186,7 @@ type InputProps struct {
 	Value       string // Current input value
 
 	CursorPosition int // Cursor position
-	OnCursorMove   func(delta int, seek int)
+	OnCursorMove   func(position int)
 
 	OnKeyDown func(e *DOMEvent) // Key down callback
 	OnChange  func(string)      // Value change callback

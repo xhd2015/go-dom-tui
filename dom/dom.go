@@ -109,7 +109,7 @@ func (d *DOM) setupVNode(vnode *Node, parent *Node, window *Window) *Node {
 }
 
 // DispatchEvent dispatches an event to the focused node and bubbles it up
-func (d *DOM) DispatchEvent(eventType string, key string, model interface{}) interface{} {
+func (d *DOM) DispatchKeyDownEvent(keyEvent *KeydownEvent) {
 	eventNode := d.Root.FindFocused()
 	if eventNode == nil {
 		log.Logf("DOM: DispatchEvent - no focused node, fallback to root node")
@@ -117,25 +117,23 @@ func (d *DOM) DispatchEvent(eventType string, key string, model interface{}) int
 		eventNode = d.Root
 	}
 
-	log.Logf("DOM: DispatchEvent %s key='%s' to focused node %s", eventType, key, eventNode.Type)
+	log.Logf("DOM: DispatchKeyDownEvent %s key='%s' to focused node %s", keyEvent.KeyType, eventNode.Type)
 
 	// Create the event
 	event := &DOMEvent{
-		Type:          eventType,
+		Type:          EventTypeKeydown,
 		Target:        eventNode,
 		CurrentTarget: eventNode,
-		Key:           key,
+		KeydownEvent:  keyEvent,
 		BubblePhase:   false,
 	}
 
 	// Handle the event at the target and bubble up
-	result := d.handleEventBubbling(eventNode, event)
+	d.handleEventBubbling(eventNode, event)
 	if !event.DefaultPrevented {
 		// handle default event
 		d.handleDefault(eventNode, event)
 	}
-	log.Logf("DOM: DispatchEvent result: %v", result)
-	return result
 }
 
 // SetFocus sets focus to a specific node
@@ -196,22 +194,26 @@ func (d *DOM) MoveFocus(direction int) bool {
 
 // HandleFocusNavigation handles focus navigation events through bubbling
 func (d *DOM) HandleFocusNavigation(event *DOMEvent, direction int) bool {
-	log.Logf("DOM: HandleFocusNavigation called with key='%s', direction=%d", event.Key, direction)
+	keyEvent := event.KeydownEvent
+	if keyEvent == nil {
+		return false
+	}
+	log.Logf("DOM: HandleFocusNavigation called with key='%s', direction=%d", keyEvent.KeyType, direction)
 
 	// Only handle navigation keys
-	switch event.Key {
-	case "down":
+	switch keyEvent.KeyType {
+	case KeyTypeDown:
 		if direction == 0 {
 			direction = 1
 		}
 		log.Logf("DOM: HandleFocusNavigation - handling down, direction=%d", direction)
-	case "up":
+	case KeyTypeUp:
 		if direction == 0 {
 			direction = -1
 		}
 		log.Logf("DOM: HandleFocusNavigation - handling up, direction=%d", direction)
 	default:
-		log.Logf("DOM: HandleFocusNavigation - key '%s' not a navigation key", event.Key)
+		log.Logf("DOM: HandleFocusNavigation - key '%s' not a navigation key", keyEvent.KeyType)
 		return false
 	}
 
@@ -230,7 +232,7 @@ func (d *DOM) HandleFocusNavigation(event *DOMEvent, direction int) bool {
 }
 
 // DispatchWindowEvent dispatches window-level events (like resize) to the DOM tree
-func (d *DOM) DispatchWindowEvent(eventType string, windowEvent *WindowResizeEvent) interface{} {
+func (d *DOM) DispatchWindowEvent(eventType EventType, windowEvent *WindowResizeEvent) {
 	log.Logf("DOM: DispatchWindowEvent %s - %dx%d", eventType, windowEvent.Width, windowEvent.Height)
 
 	// Create window event that targets the root
@@ -243,36 +245,27 @@ func (d *DOM) DispatchWindowEvent(eventType string, windowEvent *WindowResizeEve
 	}
 
 	// Handle at root level and propagate to interested components
-	return d.handleWindowEventPropagation(d.Root, event)
+	d.handleWindowEventPropagation(d.Root, event)
 }
 
 // handleWindowEventPropagation propagates window events through the DOM tree
-func (d *DOM) handleWindowEventPropagation(node *Node, event *DOMEvent) interface{} {
+func (d *DOM) handleWindowEventPropagation(node *Node, event *DOMEvent) {
 	if node == nil {
-		return nil
+		return
 	}
 
 	// Set current target
 	event.CurrentTarget = node
 
 	// Check if this node has a window event handler
-	var handleResult interface{}
 	if handler := node.GetEventHandler(event.Type); handler != nil {
-		result := handler(event)
-		if result != nil {
-			handleResult = result
-		}
+		handler(event)
 	}
 
 	// Propagate to all children (not bubbling, but broadcasting)
 	for _, child := range node.Children {
 		if child != nil {
-			childResult := d.handleWindowEventPropagation(child, event)
-			if childResult != nil && handleResult == nil {
-				handleResult = childResult
-			}
+			d.handleWindowEventPropagation(child, event)
 		}
 	}
-
-	return handleResult
 }

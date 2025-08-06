@@ -6,8 +6,38 @@ import "github.com/xhd2015/go-dom-tui/log"
 // DOM Event System
 // ========================================
 
+type EventType string
+
+const (
+	// onKeydown
+	EventTypeKeydown EventType = "keydown"
+	EventTypeResize  EventType = "resize"
+)
+
+type KeyType string
+
+const (
+	KeyTypeEnter     KeyType = "enter"
+	KeyTypeBackspace KeyType = "backspace"
+	KeyTypeDelete    KeyType = "delete"
+	KeyTypeTab       KeyType = "tab"
+	KeyTypeEsc       KeyType = "esc"
+	KeyTypeSpace     KeyType = "space"
+	KeyTypeUp        KeyType = "up"
+	KeyTypeDown      KeyType = "down"
+	KeyTypeLeft      KeyType = "left"
+	KeyTypeRight     KeyType = "right"
+	KeyTypeCtrlC     KeyType = "ctrl+c"
+	KeyTypeCtrlV     KeyType = "ctrl+v"
+	KeyTypeCtrlX     KeyType = "ctrl+x"
+	KeyTypeCtrlW     KeyType = "ctrl+w"
+	KeyTypeCtrlA     KeyType = "ctrl+a"
+	KeyTypeCtrlE     KeyType = "ctrl+e"
+	KeyTypeCtrlK     KeyType = "ctrl+k"
+)
+
 // EventHandler represents a DOM event handler function
-type EventHandler func(event *DOMEvent) interface{}
+type EventHandler func(event *DOMEvent)
 
 // WindowResizeEvent represents a window resize event
 type WindowResizeEvent struct {
@@ -17,14 +47,22 @@ type WindowResizeEvent struct {
 
 // DOMEvent represents a DOM-like event
 type DOMEvent struct {
-	Type               string
-	Target             *Node
-	CurrentTarget      *Node
-	Key                string
+	Type          EventType
+	Target        *Node
+	CurrentTarget *Node
+	KeydownEvent  *KeydownEvent
+
 	DefaultPrevented   bool
 	PropagationStopped bool
 	BubblePhase        bool
 	WindowEvent        *WindowResizeEvent // For window-specific events
+}
+
+type KeydownEvent struct {
+	KeyType KeyType
+	Runes   []rune
+	Alt     bool
+	Paste   bool
 }
 
 // PreventDefault prevents the default behavior of the event
@@ -49,10 +87,10 @@ func CombineResults(a interface{}, b interface{}) interface{} {
 }
 
 // handleEventBubbling handles event bubbling up the DOM tree
-func (d *DOM) handleEventBubbling(node *Node, event *DOMEvent) interface{} {
+func (d *DOM) handleEventBubbling(node *Node, event *DOMEvent) {
 	if node == nil || event.PropagationStopped {
 		log.Logf("DOM: handleEventBubbling - node is nil or event stopped")
-		return nil
+		return
 	}
 
 	// Set current target
@@ -60,12 +98,8 @@ func (d *DOM) handleEventBubbling(node *Node, event *DOMEvent) interface{} {
 
 	handler := node.GetEventHandler(event.Type)
 
-	var handleResult interface{}
 	if handler != nil {
-		result := handler(event)
-		if result != nil {
-			handleResult = result
-		}
+		handler(event)
 	}
 
 	// If event wasn't stopped, bubble to parent
@@ -74,36 +108,40 @@ func (d *DOM) handleEventBubbling(node *Node, event *DOMEvent) interface{} {
 	if !event.PropagationStopped && node.Parent != nil {
 		log.Logf("DOM: handleEventBubbling - bubbling to parent %s", node.Parent.Type)
 		event.BubblePhase = true
-		return d.handleEventBubbling(node.Parent, event)
+		d.handleEventBubbling(node.Parent, event)
+		return
 	}
 
 	log.Logf("DOM: handleEventBubbling - reached end of bubbling chain (stopPropagation=%t, hasParent=%t)",
 		event.PropagationStopped, node.Parent != nil)
-	return handleResult
 }
 
 func (d *DOM) handleDefault(node *Node, event *DOMEvent) {
-	if event.Type == "keydown" {
-		switch event.Key {
-		case "up", "down":
+	if event.Type == EventTypeKeydown {
+		keyEvent := event.KeydownEvent
+		if keyEvent == nil {
+			return
+		}
+		switch keyEvent.KeyType {
+		case KeyTypeUp, KeyTypeDown:
 			// handle focus navigation
 			direction := 1
-			if event.Key == "up" {
+			if keyEvent.KeyType == KeyTypeUp {
 				direction = -1
 			}
 			if d.HandleFocusNavigation(event, direction) {
 				return
 			}
-		case "left", "right":
+		case KeyTypeLeft, KeyTypeRight:
 			// move inside the input
 			if node.Type == "input" {
 				props := ExtractProps[InputProps](node.Props)
 				if props.OnCursorMove != nil {
 					delta := 1
-					if event.Key == "left" {
+					if keyEvent.KeyType == KeyTypeLeft {
 						delta = -1
 					}
-					props.OnCursorMove(delta, 0)
+					props.OnCursorMove(props.CursorPosition + delta)
 				}
 			}
 		default:
@@ -115,15 +153,15 @@ func (d *DOM) handleDefault(node *Node, event *DOMEvent) {
 				currentValue := props.Value
 
 				// Update value based on key input
-				newValue, newPos := UpdateInputValue(currentValue, props.CursorPosition, event.Key)
-				if newPos != props.CursorPosition {
-					if props.OnCursorMove != nil {
-						props.OnCursorMove(newPos-props.CursorPosition, 0)
-					}
-				}
+				newValue, newPos := UpdateInputValue(currentValue, props.CursorPosition, keyEvent)
 				if newValue != currentValue {
 					if props.OnChange != nil {
 						props.OnChange(newValue)
+					}
+				}
+				if newPos != props.CursorPosition {
+					if props.OnCursorMove != nil {
+						props.OnCursorMove(newPos)
 					}
 				}
 			}

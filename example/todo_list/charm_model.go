@@ -65,14 +65,10 @@ func (m *Model) Init() tea.Cmd {
 
 // Update handles messages and updates the model using DOM-like event dispatching
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	result := m.app.Update(msg)
+	m.app.Update(msg)
 	if m.app.State.Quitting {
 		m.cleanup()
 		return m, tea.Quit
-	}
-
-	if cmd, ok := result.(tea.Cmd); ok && cmd != nil {
-		return m, cmd
 	}
 
 	return m, nil
