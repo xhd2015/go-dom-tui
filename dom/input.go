@@ -8,22 +8,24 @@ func UpdateInputValue(currentValue string, pos int, e *KeydownEvent) (string, in
 	switch e.KeyType {
 	case KeyTypeBackspace:
 		if len(currentValue) > 0 {
-			if pos > len(currentValue) {
+			runes := []rune(currentValue)
+			if pos > len(runes) {
 				return currentValue, pos - 1
 			}
 			if pos > 0 {
-				return currentValue[:pos-1] + currentValue[pos:], pos - 1
+				return string(runes[:pos-1]) + string(runes[pos:]), pos - 1
 			} else {
-				return currentValue[1:], 0
+				return string(runes[1:]), 0
 			}
 		}
 		return currentValue, pos
 	case KeyTypeDelete:
 		if pos >= 0 && len(currentValue) > 0 {
-			if pos < len(currentValue) {
-				return currentValue[:pos] + currentValue[pos+1:], pos
+			runes := []rune(currentValue)
+			if pos < len(runes) {
+				return string(runes[:pos]) + string(runes[pos+1:]), pos
 			} else {
-				return currentValue[:len(currentValue)-1], pos
+				return string(runes[:len(runes)-1]), pos
 			}
 		}
 		return currentValue, pos
@@ -32,10 +34,11 @@ func UpdateInputValue(currentValue string, pos int, e *KeydownEvent) (string, in
 	case KeyTypeCtrlA:
 		return currentValue, 0
 	case KeyTypeCtrlE:
-		return currentValue, len(currentValue)
+		return currentValue, len([]rune(currentValue))
 	case KeyTypeCtrlK:
-		if pos < len(currentValue) {
-			return currentValue[:pos], pos
+		runes := []rune(currentValue)
+		if pos < len(runes) {
+			return string(runes[:pos]), pos
 		}
 		return currentValue, pos
 	case KeyTypeEnter, KeyTypeTab, KeyTypeEsc, KeyTypeUp, KeyTypeDown, KeyTypeLeft, KeyTypeRight:
@@ -46,14 +49,16 @@ func UpdateInputValue(currentValue string, pos int, e *KeydownEvent) (string, in
 		// Handle special keys that shouldn't be added
 		if !e.Alt && len(e.Runes) > 0 {
 			s := string(e.Runes)
-			n := len(s)
+			n := len(e.Runes)
 			log.Logf("UpdateInputValue len(e.Runes): %v, pos: %v, n: %v", len(e.Runes), pos, n)
 
 			// Single character keys (letters, numbers, symbols)
-			if pos > len(currentValue) {
+
+			runes := []rune(currentValue)
+			if pos > len(runes) {
 				return currentValue + s, pos + n
 			} else {
-				return currentValue[:pos] + s + currentValue[pos:], pos + n
+				return string(runes[:pos]) + s + string(runes[pos:]), pos + n
 			}
 		}
 		// Multi-character keys like "ctrl+c", "shift+tab" etc. don't change value
@@ -67,24 +72,25 @@ func handleDeleteBackWord(currentValue string, pos int) (string, int) {
 	if pos <= 0 {
 		return currentValue, pos
 	}
+	runes := []rune(currentValue)
 
 	// Skip trailing spaces
-	if pos > len(currentValue) {
-		pos = len(currentValue)
+	if pos > len(runes) {
+		pos = len(runes)
 	}
 	p := pos
 
-	for p > 0 && currentValue[p-1] == ' ' {
+	for p > 0 && runes[p-1] == ' ' {
 		p--
 	}
 
 	// Find start of word
 	l := p
-	for l > 0 && currentValue[l-1] != ' ' {
+	for l > 0 && runes[l-1] != ' ' {
 		l--
 	}
 
-	newStr := currentValue[:l] + currentValue[pos:]
+	newStr := string(runes[:l]) + string(runes[pos:])
 	newPos := l
 
 	return newStr, newPos
