@@ -196,7 +196,6 @@ func (cr *InteractiveCharmRenderer) renderInput(vnode *dom.Node) {
 	ti.SetValue(value)
 	ti.CharLimit = 156
 	ti.Width = 50
-
 	ti.SetCursor(props.CursorPosition)
 
 	// Set password mode if it's a password field
@@ -276,6 +275,9 @@ func (cr *InteractiveCharmRenderer) extractRenderedText(vnode *dom.Node) string 
 	var text strings.Builder
 
 	for _, child := range vnode.Children {
+		if child == nil {
+			continue
+		}
 		if child.Type == "text" {
 			text.WriteString(cr.extractTextNode(child))
 		} else {

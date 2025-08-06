@@ -40,7 +40,7 @@ func defaultStyles() CharmStyles {
 			Margin(0, 0),
 		Text: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#626262")).
-			Margin(0, 1),
+			Inline(true),
 		Button: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFF")).
 			Background(lipgloss.Color("#04B575")).
@@ -89,6 +89,9 @@ func defaultStyles() CharmStyles {
 
 // dom style to charm style
 func domStyleToCharmStyle(base lipgloss.Style, style styles.Style) lipgloss.Style {
+	if style.Inline != nil {
+		base = base.Inline(*style.Inline)
+	}
 	if style.Color != "" {
 		base = base.Foreground(lipgloss.Color(style.Color))
 	}
@@ -141,6 +144,5 @@ func domStyleToCharmStyle(base lipgloss.Style, style styles.Style) lipgloss.Styl
 	if style.FontSize != 0 {
 		base = base.Inline(true).Width(style.FontSize)
 	}
-
 	return base
 }

@@ -2,6 +2,7 @@ package styles
 
 // Style represents styling options for div elements
 type Style struct {
+	Inline        *bool
 	Color         string // text color
 	Bold          bool   // bold text
 	Italic        bool   // italic text
