@@ -75,15 +75,32 @@ func (e *DOMEvent) StopPropagation() {
 	e.PropagationStopped = true
 }
 
-func CombineResults(a interface{}, b interface{}) interface{} {
-	if a == nil {
-		return b
-	}
-	if b == nil {
-		return a
+// DispatchEvent dispatches an event to the focused node and bubbles it up
+func (d *DOM) DispatchKeyDownEvent(keyEvent *KeydownEvent) {
+	eventNode := d.Root.FindFocused()
+	if eventNode == nil {
+		log.Logf("DOM: DispatchEvent - no focused node, fallback to root node")
+		// if no focused node, just send to root node
+		eventNode = d.Root
 	}
 
-	return a
+	log.Logf("DOM: DispatchKeyDownEvent %s key='%s' to focused node %s", keyEvent.KeyType, eventNode.Type)
+
+	// Create the event
+	event := &DOMEvent{
+		Type:          EventTypeKeydown,
+		Target:        eventNode,
+		CurrentTarget: eventNode,
+		KeydownEvent:  keyEvent,
+		BubblePhase:   false,
+	}
+
+	// Handle the event at the target and bubble up
+	d.handleEventBubbling(eventNode, event)
+	if !event.DefaultPrevented {
+		// handle default event
+		d.handleDefault(eventNode, event)
+	}
 }
 
 // handleEventBubbling handles event bubbling up the DOM tree
