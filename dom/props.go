@@ -118,6 +118,9 @@ type TextNodeProps struct {
 	Focused   bool
 	Focusable bool
 
+	OnFocus func()
+	OnBlur  func()
+
 	OnKeyDown func(*DOMEvent)
 }
 
