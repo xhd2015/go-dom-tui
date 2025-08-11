@@ -58,6 +58,9 @@ func UpdateInputValue(currentValue string, pos int, e *KeydownEvent) (string, in
 			if pos > len(runes) {
 				return currentValue + s, pos + n
 			} else {
+				if pos < 0 {
+					pos = 0
+				}
 				return string(runes[:pos]) + s + string(runes[pos:]), pos + n
 			}
 		}

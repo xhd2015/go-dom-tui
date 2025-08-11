@@ -182,6 +182,9 @@ func (cr *InteractiveCharmRenderer) renderInput(vnode *dom.Node) {
 	placeholder := "Enter text..."
 	value := ""
 	inputType := "text"
+	if props.InputType != "" {
+		inputType = props.InputType
+	}
 
 	// Use typed props directly instead of GetOK/Get
 	if props.Placeholder != "" {

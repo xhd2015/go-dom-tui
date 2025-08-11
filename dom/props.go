@@ -142,6 +142,8 @@ type DivProps struct {
 
 	Focused   bool
 	Focusable bool
+	OnFocus   func()
+	OnBlur    func()
 }
 
 // CounterProps represents props for Counter component
@@ -187,6 +189,7 @@ type EmptyProps struct{}
 type InputProps struct {
 	Placeholder string // Input placeholder text
 	Value       string // Current input value
+	InputType   string // Input type: text, password, etc.
 
 	CursorPosition int // Cursor position
 	OnCursorMove   func(position int)
