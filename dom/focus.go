@@ -206,7 +206,7 @@ func (c *Node) IsFocusable() bool {
 			if pbool, ok := focusable.(*bool); ok {
 				if pbool == nil {
 					// default value
-					if c.Type == "input" {
+					if c.Type == ElementTypeInput {
 						return true
 					}
 					return false

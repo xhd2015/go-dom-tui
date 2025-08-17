@@ -58,7 +58,7 @@ func diffNodes(oldNode, newNode *dom.Node, path []int, result *DiffResult) {
 	}
 
 	// Case 4: Same type, check for updates
-	if oldNode.Type == "text" {
+	if oldNode.Type == dom.ElementTypeText {
 		// Text node - compare text content
 		if oldNode.Text != newNode.Text {
 			result.Patches = append(result.Patches, Patch{

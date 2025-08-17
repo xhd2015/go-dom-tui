@@ -151,7 +151,7 @@ func (d *DOM) handleDefault(node *Node, event *DOMEvent) {
 			}
 		case KeyTypeLeft, KeyTypeRight:
 			// move inside the input
-			if node.Type == "input" {
+			if node.Type == ElementTypeInput {
 				props := ExtractProps[InputProps](node.Props)
 				if props.OnCursorMove != nil {
 					delta := 1
@@ -163,7 +163,7 @@ func (d *DOM) handleDefault(node *Node, event *DOMEvent) {
 			}
 		default:
 			// handle input
-			if node.Type == "input" {
+			if node.Type == ElementTypeInput {
 				props := ExtractProps[InputProps](node.Props)
 
 				// Get current value from the model if available, otherwise from props

@@ -28,14 +28,14 @@ func Text(text string, styleList ...styles.Style) *Node {
 		style = styleList[0]
 	}
 	return &Node{
-		Type:  "text",
+		Type:  ElementTypeText,
 		Props: NewStructProps(TextNodeProps{Style: style}),
 		Text:  text,
 	}
 }
 func TextWithProps(text string, props TextNodeProps) *Node {
 	return &Node{
-		Type:  "text",
+		Type:  ElementTypeText,
 		Props: NewStructProps(props),
 		Text:  text,
 	}
@@ -43,47 +43,52 @@ func TextWithProps(text string, props TextNodeProps) *Node {
 
 // Div creates a div component
 func Div(props DivProps, children ...*Node) *Node {
-	return CreateNode("div", NewStructProps(props), children...)
+	return CreateNode(ElementTypeDiv, NewStructProps(props), children...)
 }
 
 // Span creates a span component
 func Span(props DivProps, children ...*Node) *Node {
-	return CreateNode("span", NewStructProps(props), children...)
+	return CreateNode(ElementTypeSpan, NewStructProps(props), children...)
 }
 
 // Br creates a line break component
 func Br() *Node {
-	return CreateNode("br", NewStructProps(EmptyProps{}))
+	return CreateNode(ElementTypeBr, NewStructProps(EmptyProps{}))
 }
 
 func H1(props DivProps, children ...*Node) *Node {
-	return CreateNode("h1", NewStructProps(props), children...)
+	return CreateNode(ElementTypeH1, NewStructProps(props), children...)
 }
 
 func H2(props DivProps, children ...*Node) *Node {
-	return CreateNode("h2", NewStructProps(props), children...)
+	return CreateNode(ElementTypeH2, NewStructProps(props), children...)
 }
 
 func P(props DivProps, children ...*Node) *Node {
-	return CreateNode("p", NewStructProps(props), children...)
+	return CreateNode(ElementTypeP, NewStructProps(props), children...)
 }
 
 func Input(props InputProps, children ...*Node) *Node {
-	return CreateNode("input", NewStructProps(props), children...)
+	return CreateNode(ElementTypeInput, NewStructProps(props), children...)
 }
 
 func Button(props ButtonProps, children ...*Node) *Node {
-	return CreateNode("button", NewStructProps(props), children...)
+	return CreateNode(ElementTypeButton, NewStructProps(props), children...)
 }
 
 func Ul(props DivProps, children ...*Node) *Node {
-	return CreateNode("ul", NewStructProps(props), children...)
+	return CreateNode(ElementTypeUl, NewStructProps(props), children...)
 }
 
 func Li(props ListItemProps, children ...*Node) *Node {
-	return CreateNode("li", NewStructProps(props), children...)
+	return CreateNode(ElementTypeLi, NewStructProps(props), children...)
 }
 
 func Fragment(children ...*Node) *Node {
-	return CreateNode("fragment", NewStructProps(EmptyProps{}), children...)
+	return CreateNode(ElementTypeFragment, NewStructProps(EmptyProps{}), children...)
+}
+
+// Spacer creates a spacer component that expands to fill available horizontal space
+func Spacer() *Node {
+	return CreateNode(ElementTypeSpacer, NewStructProps(SpacerProps{MinSize: 1}))
 }

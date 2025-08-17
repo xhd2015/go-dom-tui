@@ -136,6 +136,7 @@ type ButtonProps struct {
 // DivProps represents props for div elements
 type DivProps struct {
 	Style styles.Style
+	Width int // Container width in characters (0 = use window width)
 
 	OnKeyDown      func(*DOMEvent)
 	OnWindowResize func(*DOMEvent)
@@ -191,6 +192,8 @@ type InputProps struct {
 	Value       string // Current input value
 	InputType   string // Input type: text, password, etc.
 
+	Width int // Input width in characters (0 = use window width)
+
 	CursorPosition int // Cursor position
 	OnCursorMove   func(position int)
 
@@ -223,4 +226,9 @@ type ListItemProps struct {
 	OnBlur     func()
 	OnKeyDown  func(e *DOMEvent)
 	Focusable  *bool
+}
+
+// SpacerProps represents props for spacer elements
+type SpacerProps struct {
+	MinSize int // Minimum size in characters (default: 1)
 }

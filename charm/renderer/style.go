@@ -44,8 +44,6 @@ func defaultStyles() CharmStyles {
 		Button: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFF")).
 			Background(lipgloss.Color("#04B575")).
-			Padding(0, 3).
-			Margin(0, 1).
 			Bold(true),
 		Container: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).

@@ -2,6 +2,7 @@ package renderer
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -11,6 +12,12 @@ import (
 	"github.com/xhd2015/go-dom-tui/react"
 	"github.com/xhd2015/go-dom-tui/styles"
 )
+
+// stripANSI removes ANSI escape sequences from a string to get visual width
+func stripANSI(str string) string {
+	ansiRegex := regexp.MustCompile(`\x1b\[[0-9;]*m`)
+	return ansiRegex.ReplaceAllString(str, "")
+}
 
 // InteractiveCharmRenderer implements the Renderer interface with user interaction
 type InteractiveCharmRenderer struct {
@@ -46,27 +53,29 @@ func (cr *InteractiveCharmRenderer) renderNode(vnode *dom.Node, depth int) {
 	}
 
 	switch vnode.Type {
-	case "text":
+	case dom.ElementTypeText:
 		cr.renderTextNode(vnode)
-	case "div":
+	case dom.ElementTypeDiv:
 		cr.renderContainer(vnode, depth)
-	case "h1":
+	case dom.ElementTypeH1:
 		cr.renderTitle(vnode)
-	case "h2":
+	case dom.ElementTypeH2:
 		cr.renderSubtitle(vnode)
-	case "p":
+	case dom.ElementTypeP:
 		cr.renderText(vnode)
-	case "button":
+	case dom.ElementTypeButton:
 		cr.renderButton(vnode)
-	case "input":
+	case dom.ElementTypeInput:
 		cr.renderInput(vnode)
-	case "ul":
+	case dom.ElementTypeUl:
 		cr.renderList(vnode, depth)
-	case "li":
+	case dom.ElementTypeLi:
 		cr.renderListItem(vnode)
-	case "br":
+	case dom.ElementTypeBr:
 		cr.renderBr(vnode)
-	case "fragment":
+	case dom.ElementTypeSpacer:
+		cr.renderSpacer(vnode, depth)
+	case dom.ElementTypeFragment:
 		cr.renderFragment(vnode)
 	case "component":
 		panic("component is deprecated")
@@ -86,20 +95,140 @@ func (cr *InteractiveCharmRenderer) renderFragment(vnode *dom.Node) {
 	}
 }
 
+func (cr *InteractiveCharmRenderer) renderSpacer(vnode *dom.Node, depth int) {
+	// Spacer rendering is now handled by the container's layout system
+	// This method should only be called for spacers outside of containers
+	// In that case, render minimum space
+	props := dom.ExtractProps[dom.SpacerProps](vnode.Props)
+	minSize := props.MinSize
+	if minSize <= 0 {
+		minSize = 1
+	}
+
+	for i := 0; i < minSize; i++ {
+		cr.output += " "
+	}
+}
+
 // renderContainer renders a container div with border
 func (cr *InteractiveCharmRenderer) renderContainer(vnode *dom.Node, depth int) {
 	var content strings.Builder
 
-	for _, child := range vnode.Children {
-		childRenderer := &InteractiveCharmRenderer{styles: cr.styles}
-		childRenderer.renderNode(child, depth+1)
-		content.WriteString(childRenderer.output)
+	// Check if container has spacers - if so, use layout calculation
+	if cr.hasSpacers(vnode.Children) {
+		cr.renderContainerWithLayout(vnode, depth, &content)
+	} else {
+		// Simple rendering for containers without spacers
+		for _, child := range vnode.Children {
+			childRenderer := &InteractiveCharmRenderer{styles: cr.styles}
+			childRenderer.renderNode(child, depth+1)
+			content.WriteString(childRenderer.output)
+		}
 	}
 
 	style := cr.getNodeStyle(vnode)
 
 	rendered := style.Render(content.String())
 	cr.output += rendered + "\n"
+}
+
+// hasSpacers checks if any child nodes are spacers
+func (cr *InteractiveCharmRenderer) hasSpacers(children []*dom.Node) bool {
+	for _, child := range children {
+		if child != nil && child.Type == dom.ElementTypeSpacer {
+			return true
+		}
+	}
+	return false
+}
+
+// renderContainerWithLayout renders container with spacer layout calculation
+func (cr *InteractiveCharmRenderer) renderContainerWithLayout(vnode *dom.Node, depth int, content *strings.Builder) {
+	// Get available width using guard clauses (early return pattern)
+	availableWidth := 80 // Default fallback
+
+	// Extract props width (0 if not specified or not DivProps)
+	propsWidth := 0
+	if vnode.Props != nil {
+		if divProps, ok := vnode.Props.(dom.StructProps[dom.DivProps]); ok {
+			propsWidth = divProps.Value.Width
+		}
+	}
+
+	// If props specifies width, use it
+	if propsWidth > 0 {
+		availableWidth = propsWidth
+	} else {
+		// Props width is 0, use window width if available
+		if vnode.Window != nil {
+			windowWidth := vnode.Window.GetWidth()
+			if windowWidth > 0 {
+				availableWidth = windowWidth
+			}
+		}
+		// Otherwise keep default (80)
+	}
+
+	// First pass: render non-spacer elements and calculate their total width
+	var nonSpacerElements []string
+	var spacerIndices []int
+	totalNonSpacerWidth := 0
+
+	for i, child := range vnode.Children {
+		if child == nil {
+			continue
+		}
+
+		if child.Type == dom.ElementTypeSpacer {
+			spacerIndices = append(spacerIndices, i)
+			nonSpacerElements = append(nonSpacerElements, "") // placeholder
+		} else {
+			childRenderer := &InteractiveCharmRenderer{styles: cr.styles}
+			childRenderer.renderNode(child, depth+1)
+			rendered := childRenderer.output
+			nonSpacerElements = append(nonSpacerElements, rendered)
+
+			// Calculate width (for horizontal layout, we sum up the content widths)
+			lines := strings.Split(rendered, "\n")
+			if len(lines) > 0 {
+				// For horizontal layout, use the first non-empty line's visual width (without ANSI codes)
+				for _, line := range lines {
+					trimmed := strings.TrimSpace(line)
+					if trimmed != "" {
+						visualWidth := len(stripANSI(trimmed))
+						totalNonSpacerWidth += visualWidth
+						break
+					}
+				}
+			}
+		}
+	}
+
+	// Calculate space available for spacers
+	spacerCount := len(spacerIndices)
+	if spacerCount > 0 {
+		availableSpacerWidth := availableWidth - totalNonSpacerWidth
+		if availableSpacerWidth < spacerCount {
+			availableSpacerWidth = spacerCount // Minimum 1 space per spacer
+		}
+		spacerWidth := availableSpacerWidth / spacerCount
+
+		// Render all elements with calculated spacer widths
+		for _, element := range nonSpacerElements {
+			if element == "" { // This is a spacer
+				for j := 0; j < spacerWidth; j++ {
+					content.WriteString(" ")
+				}
+			} else {
+				content.WriteString(element)
+			}
+		}
+	} else {
+		// No spacers, just render normally
+		for _, element := range nonSpacerElements {
+			content.WriteString(element)
+		}
+	}
 }
 
 // renderTitle renders an h1 element
@@ -122,19 +251,19 @@ func (cr *InteractiveCharmRenderer) getNodeStyle(vnode *dom.Node) lipgloss.Style
 
 	baseStyle := cr.styles.NoBorderDiv
 	switch vnode.Type {
-	case "h1":
+	case dom.ElementTypeH1:
 		baseStyle = cr.styles.Title
-	case "h2":
+	case dom.ElementTypeH2:
 		baseStyle = cr.styles.Subtitle
-	case "p":
+	case dom.ElementTypeP:
 		baseStyle = cr.styles.Text
-	case "button":
+	case dom.ElementTypeButton:
 		baseStyle = cr.styles.Button
-	case "input":
+	case dom.ElementTypeInput:
 		baseStyle = cr.styles.Input
-	case "li":
+	case dom.ElementTypeLi:
 		baseStyle = cr.styles.CompactText
-	case "text":
+	case dom.ElementTypeText:
 		baseStyle = cr.styles.Text
 	}
 
@@ -198,7 +327,28 @@ func (cr *InteractiveCharmRenderer) renderInput(vnode *dom.Node) {
 	ti.Placeholder = placeholder
 	ti.SetValue(value)
 	ti.CharLimit = 156
-	ti.Width = 50
+
+	// Set width based on props or window width
+	if props.Width > 0 {
+		ti.Width = props.Width
+	} else {
+		// Use window width if available, otherwise default to 50
+		if vnode.Window != nil {
+			windowWidth := vnode.Window.GetWidth()
+			if windowWidth > 0 {
+				// Leave some margin for styling and borders
+				ti.Width = windowWidth - 10
+				if ti.Width < 20 {
+					ti.Width = 20 // Minimum width
+				}
+			} else {
+				ti.Width = 50 // Default fallback
+			}
+		} else {
+			ti.Width = 50 // Default fallback
+		}
+	}
+
 	ti.SetCursor(props.CursorPosition)
 
 	// Set password mode if it's a password field
