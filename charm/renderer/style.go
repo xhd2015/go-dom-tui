@@ -30,13 +30,13 @@ func defaultStyles() CharmStyles {
 			Bold(true).
 			Foreground(lipgloss.Color("#FAFAFA")).
 			Background(lipgloss.Color("#7D56F4")).
-			Padding(0, 2).
-			Margin(1, 0),
+			Padding(0, 0).
+			Margin(0, 0),
 		Subtitle: lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("#FFF7DB")).
 			Background(lipgloss.Color("#F25D94")).
-			Padding(0, 1).
+			Padding(0, 0).
 			Margin(0, 0),
 		Text: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#626262")).
@@ -47,15 +47,11 @@ func defaultStyles() CharmStyles {
 			Bold(true),
 		Container: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#874BFD")).
-			Padding(2, 3).
-			Margin(1, 0),
+			BorderForeground(lipgloss.Color("#874BFD")),
 		CompactDiv: lipgloss.NewStyle().
 			Padding(0, 0).
 			Margin(0, 0),
-		NoBorderDiv: lipgloss.NewStyle().
-			Padding(1, 2).
-			Margin(0, 0),
+		NoBorderDiv: lipgloss.NewStyle(),
 		CompactText: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#626262")).
 			Margin(0, 0),

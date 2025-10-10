@@ -50,13 +50,13 @@ func TestSpacerInContainer(t *testing.T) {
 			renderer := NewInteractiveCharmRenderer()
 			output := renderer.Render(layout)
 
-			// Extract the content line (should be line 1)
+			// Extract the content line (should be line 0)
 			lines := strings.Split(output, "\n")
-			if len(lines) < 2 {
-				t.Fatalf("Expected at least 2 lines, got %d", len(lines))
+			if len(lines) < 1 {
+				t.Fatalf("Expected at least 1 line, got %d", len(lines))
 			}
 
-			contentLine := strings.TrimSpace(lines[1])
+			contentLine := strings.TrimSpace(lines[0])
 
 			// Verify content contains Left and Right
 			if !strings.Contains(contentLine, "Left") {
@@ -91,11 +91,11 @@ func TestMultipleSpacers(t *testing.T) {
 	output := renderer.Render(layout)
 
 	lines := strings.Split(output, "\n")
-	if len(lines) < 2 {
-		t.Fatalf("Expected at least 2 lines, got %d", len(lines))
+	if len(lines) < 1 {
+		t.Fatalf("Expected at least 1 line, got %d", len(lines))
 	}
 
-	contentLine := strings.TrimSpace(lines[1])
+	contentLine := strings.TrimSpace(lines[0])
 
 	// Strip ANSI escape sequences to get the actual visual content
 	visualContent := stripANSI(contentLine)
@@ -149,11 +149,11 @@ func TestSpacerWithDifferentContent(t *testing.T) {
 			output := renderer.Render(layout)
 
 			lines := strings.Split(output, "\n")
-			if len(lines) < 2 {
-				t.Fatalf("Expected at least 2 lines, got %d", len(lines))
+			if len(lines) < 1 {
+				t.Fatalf("Expected at least 1 line, got %d", len(lines))
 			}
 
-			contentLine := strings.TrimSpace(lines[1])
+			contentLine := strings.TrimSpace(lines[0])
 
 			// Verify both texts are present
 			if !strings.Contains(contentLine, tt.leftText) {
@@ -188,11 +188,11 @@ func TestSpacerLayoutCalculation(t *testing.T) {
 	output := renderer.Render(layout)
 
 	lines := strings.Split(output, "\n")
-	if len(lines) < 2 {
-		t.Fatalf("Expected at least 2 lines, got %d", len(lines))
+	if len(lines) < 1 {
+		t.Fatalf("Expected at least 1 line, got %d", len(lines))
 	}
 
-	contentLine := strings.TrimSpace(lines[1])
+	contentLine := strings.TrimSpace(lines[0])
 
 	// With terminal width 50, and content "X" + "Y" (2 chars),
 	// the spacer should fill most of the remaining space
@@ -234,11 +234,11 @@ func TestSpacerWithNoWindow(t *testing.T) {
 	}
 
 	lines := strings.Split(output, "\n")
-	if len(lines) < 2 {
-		t.Fatalf("Expected at least 2 lines, got %d", len(lines))
+	if len(lines) < 1 {
+		t.Fatalf("Expected at least 1 line, got %d", len(lines))
 	}
 
-	contentLine := strings.TrimSpace(lines[1])
+	contentLine := strings.TrimSpace(lines[0])
 
 	// Should still contain the text elements
 	if !strings.Contains(contentLine, "Left") || !strings.Contains(contentLine, "Right") {

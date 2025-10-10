@@ -21,8 +21,10 @@ func stripANSI(str string) string {
 
 // InteractiveCharmRenderer implements the Renderer interface with user interaction
 type InteractiveCharmRenderer struct {
-	output string
-	styles CharmStyles
+	output       string
+	styles       CharmStyles
+	lastWasBlock bool // tracks if the last rendered element was a block element
+	needsNewline bool // tracks if we need a newline before the next block element
 }
 
 // NewInteractiveCharmRenderer creates a new interactive renderer with styled components
@@ -32,9 +34,28 @@ func NewInteractiveCharmRenderer() *InteractiveCharmRenderer {
 	}
 }
 
+// updateRenderState updates the renderer state after rendering an element
+func (cr *InteractiveCharmRenderer) updateRenderState(elementType string, addedNewline bool) {
+	cr.lastWasBlock = cr.isBlockElementType(elementType)
+	cr.needsNewline = !addedNewline && !cr.lastWasBlock
+}
+
+// shouldAddNewlineBeforeBlock determines if we need to add a newline before a block element
+func (cr *InteractiveCharmRenderer) shouldAddNewlineBeforeBlock() bool {
+	return cr.needsNewline && len(cr.output) > 0 && !strings.HasSuffix(cr.output, "\n")
+}
+
+// isBlockElementType checks if an element type is a block element
+func (cr *InteractiveCharmRenderer) isBlockElementType(elementType string) bool {
+	return elementType == dom.ElementTypeDiv || elementType == dom.ElementTypeP ||
+		elementType == dom.ElementTypeH1 || elementType == dom.ElementTypeH2
+}
+
 // Render renders a VNode using Charm CLI styling
 func (cr *InteractiveCharmRenderer) Render(vnode *dom.Node) string {
 	cr.output = ""
+	cr.lastWasBlock = false
+	cr.needsNewline = false
 
 	// Update styles based on window size from VNode
 	if vnode != nil && vnode.Window != nil {
@@ -52,11 +73,18 @@ func (cr *InteractiveCharmRenderer) renderNode(vnode *dom.Node, depth int) {
 		return
 	}
 
+	// Check if we need to add a newline before block elements
+	if cr.isBlockElementType(vnode.Type) && cr.shouldAddNewlineBeforeBlock() {
+		cr.output += "\n"
+	}
+
 	switch vnode.Type {
 	case dom.ElementTypeText:
 		cr.renderTextNode(vnode)
 	case dom.ElementTypeDiv:
 		cr.renderContainer(vnode, depth)
+	case dom.ElementTypeSpan:
+		cr.renderSpan(vnode)
 	case dom.ElementTypeH1:
 		cr.renderTitle(vnode)
 	case dom.ElementTypeH2:
@@ -87,12 +115,15 @@ func (cr *InteractiveCharmRenderer) renderNode(vnode *dom.Node, depth int) {
 
 func (cr *InteractiveCharmRenderer) renderBr(vnode *dom.Node) {
 	cr.output += "\n"
+	cr.updateRenderState(vnode.Type, true) // br adds a newline
 }
 
 func (cr *InteractiveCharmRenderer) renderFragment(vnode *dom.Node) {
 	for _, child := range vnode.Children {
 		cr.renderNode(child, 0)
 	}
+	// Fragment doesn't add its own newlines, state is managed by individual elements
+	cr.updateRenderState(vnode.Type, false)
 }
 
 func (cr *InteractiveCharmRenderer) renderSpacer(vnode *dom.Node, depth int) {
@@ -110,6 +141,16 @@ func (cr *InteractiveCharmRenderer) renderSpacer(vnode *dom.Node, depth int) {
 	}
 }
 
+// renderSpan renders an inline span element
+func (cr *InteractiveCharmRenderer) renderSpan(vnode *dom.Node) {
+	// Span is inline, so just render the content without newlines
+	text := cr.extractRenderedText(vnode)
+	style := cr.getNodeStyle(vnode)
+	rendered := style.Render(text)
+	cr.output += rendered                   // No newline for inline elements
+	cr.updateRenderState(vnode.Type, false) // inline element, no newline added
+}
+
 // renderContainer renders a container div with border
 func (cr *InteractiveCharmRenderer) renderContainer(vnode *dom.Node, depth int) {
 	var content strings.Builder
@@ -119,17 +160,46 @@ func (cr *InteractiveCharmRenderer) renderContainer(vnode *dom.Node, depth int) 
 		cr.renderContainerWithLayout(vnode, depth, &content)
 	} else {
 		// Simple rendering for containers without spacers
-		for _, child := range vnode.Children {
+		// Handle mixed inline/block elements using child renderer state
+		var lastChildRenderer *InteractiveCharmRenderer
+
+		for i, child := range vnode.Children {
 			childRenderer := &InteractiveCharmRenderer{styles: cr.styles}
 			childRenderer.renderNode(child, depth+1)
+
+			// If this child is a block element and the previous child was inline (needsNewline),
+			// add a newline before this block element's output
+			if i > 0 && lastChildRenderer != nil && childRenderer.lastWasBlock && lastChildRenderer.needsNewline {
+				contentStr := content.String()
+				if !strings.HasSuffix(contentStr, "\n") {
+					content.WriteString("\n")
+				}
+			}
+
 			content.WriteString(childRenderer.output)
+			lastChildRenderer = childRenderer
 		}
 	}
 
 	style := cr.getNodeStyle(vnode)
 
 	rendered := style.Render(content.String())
-	cr.output += rendered + "\n"
+
+	// Only add newline if content doesn't already end with one (like HTML block behavior)
+	// This applies when we have block children and no spacers (pure nested block layout)
+	contentStr := content.String()
+	hasBlockChildren := cr.hasBlockChildren(vnode.Children)
+	hasSpacers := cr.hasSpacers(vnode.Children)
+
+	addedNewline := false
+	if hasBlockChildren && !hasSpacers && strings.HasSuffix(contentStr, "\n") {
+		cr.output += rendered
+	} else {
+		cr.output += rendered + "\n"
+		addedNewline = true
+	}
+
+	cr.updateRenderState(vnode.Type, addedNewline)
 }
 
 // hasSpacers checks if any child nodes are spacers
@@ -140,6 +210,25 @@ func (cr *InteractiveCharmRenderer) hasSpacers(children []*dom.Node) bool {
 		}
 	}
 	return false
+}
+
+// hasBlockChildren checks if any child nodes are block elements (like divs)
+func (cr *InteractiveCharmRenderer) hasBlockChildren(children []*dom.Node) bool {
+	for _, child := range children {
+		if child != nil && cr.isBlockElement(child) {
+			return true
+		}
+	}
+	return false
+}
+
+// isBlockElement checks if a node is a block element
+func (cr *InteractiveCharmRenderer) isBlockElement(node *dom.Node) bool {
+	if node == nil {
+		return false
+	}
+	return node.Type == dom.ElementTypeDiv || node.Type == dom.ElementTypeP ||
+		node.Type == dom.ElementTypeH1 || node.Type == dom.ElementTypeH2
 }
 
 // renderContainerWithLayout renders container with spacer layout calculation
@@ -452,6 +541,7 @@ func (cr *InteractiveCharmRenderer) extractTextNode(vnode *dom.Node) string {
 }
 func (cr *InteractiveCharmRenderer) renderTextNode(vnode *dom.Node) {
 	cr.output += cr.extractTextNode(vnode)
+	cr.updateRenderState(vnode.Type, false) // text nodes don't add newlines
 }
 
 // ApplyPatch applies a patch to update the rendered output

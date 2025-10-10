@@ -8,10 +8,14 @@ import (
 	"github.com/xhd2015/go-dom-tui/dom"
 )
 
+// renderNodeHelper is a helper function that takes a *dom.Node and returns the rendered string
+func renderNodeHelper(vnode *dom.Node) string {
+	renderer := NewInteractiveCharmRenderer()
+	return renderer.Render(vnode)
+}
+
 // TestRenderInput tests the renderInput function
 func TestRenderInput(t *testing.T) {
-	renderer := NewInteractiveCharmRenderer()
-
 	t.Run("RenderInputWithComponent", func(t *testing.T) {
 		// Create a textinput component
 		ti := textinput.New()
@@ -28,17 +32,16 @@ func TestRenderInput(t *testing.T) {
 			Props: props,
 		}
 
-		// Render the input
-		renderer.output = ""
-		renderer.renderInput(vnode)
+		// Render the input using helper
+		output := renderNodeHelper(vnode)
 
 		// Check that output was generated
-		if renderer.output == "" {
+		if output == "" {
 			t.Error("Expected output to be generated")
 		}
 
 		// Output should contain a newline (from the render function)
-		if !strings.Contains(renderer.output, "\n") {
+		if !strings.Contains(output, "\n") {
 			t.Error("Expected output to contain newline")
 		}
 	})
@@ -54,17 +57,16 @@ func TestRenderInput(t *testing.T) {
 			Props: props,
 		}
 
-		// Render the input
-		renderer.output = ""
-		renderer.renderInput(vnode)
+		// Render the input using helper
+		output := renderNodeHelper(vnode)
 
 		// Check that output was generated
-		if renderer.output == "" {
+		if output == "" {
 			t.Error("Expected output to be generated")
 		}
 
 		// Output should contain a newline
-		if !strings.Contains(renderer.output, "\n") {
+		if !strings.Contains(output, "\n") {
 			t.Error("Expected output to contain newline")
 		}
 	})
@@ -82,12 +84,11 @@ func TestRenderInput(t *testing.T) {
 			Props: props,
 		}
 
-		// Render the input
-		renderer.output = ""
-		renderer.renderInput(vnode)
+		// Render the input using helper
+		output := renderNodeHelper(vnode)
 
 		// Check that output was generated
-		if renderer.output == "" {
+		if output == "" {
 			t.Error("Expected output to be generated")
 		}
 	})
@@ -100,12 +101,11 @@ func TestRenderInput(t *testing.T) {
 			Props: props,
 		}
 
-		// Render the input
-		renderer.output = ""
-		renderer.renderInput(vnode)
+		// Render the input using helper
+		output := renderNodeHelper(vnode)
 
 		// Check that output was generated (should use defaults)
-		if renderer.output == "" {
+		if output == "" {
 			t.Error("Expected output to be generated with default values")
 		}
 	})
@@ -117,81 +117,17 @@ func TestRenderInput(t *testing.T) {
 		}
 
 		// Should not panic with empty props
-		renderer.output = ""
-		renderer.renderInput(vnode)
+		output := renderNodeHelper(vnode)
 
 		// Check that output was generated (should use defaults)
-		if renderer.output == "" {
+		if output == "" {
 			t.Error("Expected output to be generated with default values")
 		}
 	})
 }
 
-// testInputProps is a custom props type for testing password input
-type testInputProps struct {
-	placeholder string
-	value       string
-	inputType   string
-}
-
-func (p *testInputProps) Get(key string) (any, bool) {
-	switch key {
-	case "placeholder":
-		return p.placeholder, p.placeholder != ""
-	case "value":
-		return p.value, true
-	case "type":
-		return p.inputType, p.inputType != ""
-	}
-	return nil, false
-}
-
-func (p *testInputProps) GetString(key string) string {
-	switch key {
-	case "placeholder":
-		return p.placeholder
-	case "value":
-		return p.value
-	case "type":
-		return p.inputType
-	}
-	return ""
-}
-
-func (p *testInputProps) GetOK(key string) (any, bool) {
-	switch key {
-	case "placeholder":
-		return p.placeholder, p.placeholder != ""
-	case "value":
-		return p.value, true
-	case "type":
-		return p.inputType, p.inputType != ""
-	}
-	return nil, false
-}
-
-func (p *testInputProps) Range(fn func(key string, value any) bool) {
-	if p.placeholder != "" {
-		fn("placeholder", p.placeholder)
-	}
-	fn("value", p.value)
-	if p.inputType != "" {
-		fn("type", p.inputType)
-	}
-}
-
-func (p *testInputProps) Clone() dom.Props {
-	return &testInputProps{
-		placeholder: p.placeholder,
-		value:       p.value,
-		inputType:   p.inputType,
-	}
-}
-
 // TestRenderButton tests the renderButton function
 func TestRenderButton(t *testing.T) {
-	renderer := NewInteractiveCharmRenderer()
-
 	t.Run("RenderButtonWithText", func(t *testing.T) {
 		// Create a button with text child
 		textNode := &dom.Node{
@@ -206,17 +142,16 @@ func TestRenderButton(t *testing.T) {
 			Children: []*dom.Node{textNode},
 		}
 
-		// Render the button
-		renderer.output = ""
-		renderer.renderButton(vnode)
+		// Render the button using helper
+		output := renderNodeHelper(vnode)
 
 		// Check that output was generated
-		if renderer.output == "" {
+		if output == "" {
 			t.Error("Expected output to be generated")
 		}
 
 		// Output should contain a newline
-		if !strings.Contains(renderer.output, "\n") {
+		if !strings.Contains(output, "\n") {
 			t.Error("Expected output to contain newline")
 		}
 	})
@@ -224,8 +159,6 @@ func TestRenderButton(t *testing.T) {
 
 // TestRenderText tests the renderText function
 func TestRenderText(t *testing.T) {
-	renderer := NewInteractiveCharmRenderer()
-
 	t.Run("RenderTextWithContent", func(t *testing.T) {
 		// Create a text element with text child
 		textNode := &dom.Node{
@@ -240,20 +173,272 @@ func TestRenderText(t *testing.T) {
 			Children: []*dom.Node{textNode},
 		}
 
-		// Render the text
-		renderer.output = ""
-		renderer.renderText(vnode)
+		// Render the text using helper
+		output := renderNodeHelper(vnode)
 
 		// Check that output was generated
-		if renderer.output == "" {
+		if output == "" {
 			t.Error("Expected output to be generated")
 		}
 
 		// Output should contain a newline
-		if !strings.Contains(renderer.output, "\n") {
+		if !strings.Contains(output, "\n") {
 			t.Error("Expected output to contain newline")
 		}
 	})
 }
 
-// Note: TestExtractText was removed as it was testing non-existent recursive text extraction functionality
+// TestTitle tests the renderTitle function for H1 and H2 elements
+func TestTitle(t *testing.T) {
+	t.Run("RenderH1WithText", func(t *testing.T) {
+		// Create an H1 element with text child
+		textNode := &dom.Node{
+			Type:  dom.ElementTypeText,
+			Props: dom.NewStructProps(dom.TextNodeProps{}),
+			Text:  "Main Title",
+		}
+
+		vnode := &dom.Node{
+			Type:     dom.ElementTypeH1,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{textNode},
+		}
+
+		// Render the H1 using helper
+		output := renderNodeHelper(vnode)
+
+		// Check that output was generated
+		if output == "" {
+			t.Error("Expected output to be generated")
+		}
+
+		// Output should contain a newline
+		if !strings.Contains(output, "\n") {
+			t.Error("Expected output to contain newline")
+		}
+
+		// Output should contain the title text
+		if !strings.Contains(output, "Main Title") {
+			t.Error("Expected output to contain 'Main Title'")
+		}
+	})
+
+	t.Run("RenderH2WithText", func(t *testing.T) {
+		// Create an H2 element with text child
+		textNode := &dom.Node{
+			Type:  dom.ElementTypeText,
+			Props: dom.NewStructProps(dom.TextNodeProps{}),
+			Text:  "Subtitle",
+		}
+
+		vnode := &dom.Node{
+			Type:     dom.ElementTypeH2,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{textNode},
+		}
+
+		// Render the H2 using helper
+		output := renderNodeHelper(vnode)
+
+		// Check that output was generated
+		if output == "" {
+			t.Error("Expected output to be generated")
+		}
+
+		// Output should contain a newline
+		if !strings.Contains(output, "\n") {
+			t.Error("Expected output to contain newline")
+		}
+
+		// Output should contain the subtitle text
+		if !strings.Contains(output, "Subtitle") {
+			t.Error("Expected output to contain 'Subtitle'")
+		}
+	})
+
+	t.Run("RenderH1WithEmptyContent", func(t *testing.T) {
+		// Create an H1 element with empty content
+		vnode := &dom.Node{
+			Type:     dom.ElementTypeH1,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{},
+		}
+
+		// Render the H1 using helper
+		output := renderNodeHelper(vnode)
+
+		// Check that output was generated (should handle empty content gracefully)
+		if output == "" {
+			t.Error("Expected output to be generated even with empty content")
+		}
+	})
+
+	t.Run("RenderH2WithEmptyContent", func(t *testing.T) {
+		// Create an H2 element with empty content
+		vnode := &dom.Node{
+			Type:     dom.ElementTypeH2,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{},
+		}
+
+		// Render the H2 using helper
+		output := renderNodeHelper(vnode)
+
+		// Check that output was generated (should handle empty content gracefully)
+		if output == "" {
+			t.Error("Expected output to be generated even with empty content")
+		}
+	})
+}
+
+// TestNestedDiv tests rendering nested div elements
+func TestNestedDiv(t *testing.T) {
+	t.Run("RenderNestedDivWithChildren", func(t *testing.T) {
+		// Create text nodes for child divs
+		textNode1 := &dom.Node{
+			Type:  dom.ElementTypeText,
+			Props: dom.NewStructProps(dom.TextNodeProps{}),
+			Text:  " child 1",
+		}
+
+		textNode2 := &dom.Node{
+			Type:  dom.ElementTypeText,
+			Props: dom.NewStructProps(dom.TextNodeProps{}),
+			Text:  " child 2",
+		}
+
+		// Create child div elements
+		childDiv1 := &dom.Node{
+			Type:     dom.ElementTypeDiv,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{textNode1},
+		}
+
+		childDiv2 := &dom.Node{
+			Type:     dom.ElementTypeDiv,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{textNode2},
+		}
+
+		// Create parent div with child divs
+		parentDiv := &dom.Node{
+			Type:     dom.ElementTypeDiv,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{childDiv1, childDiv2},
+		}
+
+		// Render the nested div structure
+		output := renderNodeHelper(parentDiv)
+
+		// Expected output should be exact literal string match
+		// Should not have extra newline when children are already block elements
+		expected := " child 1\n child 2\n"
+
+		// Check exact string match
+		if output != expected {
+			t.Errorf("Expected exact output:\n%q\nGot:\n%q", expected, output)
+		}
+	})
+}
+
+// TestSpanFollowedByDiv tests inline span followed by block div
+func TestSpanFollowedByDiv(t *testing.T) {
+	t.Run("RenderSpanThenDiv", func(t *testing.T) {
+		// Create text nodes
+		spanText := &dom.Node{
+			Type:  dom.ElementTypeText,
+			Props: dom.NewStructProps(dom.TextNodeProps{}),
+			Text:  "text1",
+		}
+
+		divText := &dom.Node{
+			Type:  dom.ElementTypeText,
+			Props: dom.NewStructProps(dom.TextNodeProps{}),
+			Text:  "text2",
+		}
+
+		// Create span element (inline)
+		spanElement := &dom.Node{
+			Type:     dom.ElementTypeSpan,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{spanText},
+		}
+
+		// Create div element (block)
+		divElement := &dom.Node{
+			Type:     dom.ElementTypeDiv,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{divText},
+		}
+
+		// Create container with span followed by div
+		container := &dom.Node{
+			Type:     dom.ElementTypeDiv,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{spanElement, divElement},
+		}
+
+		// Render the structure
+		output := renderNodeHelper(container)
+
+		// Expected: span renders inline, then div starts on new line
+		// The span "text1" should be followed by div "text2" on a new line
+		expected := "text1\ntext2\n"
+
+		// Check exact string match
+		if output != expected {
+			t.Errorf("Expected exact output:\n%q\nGot:\n%q", expected, output)
+		}
+	})
+}
+
+// TestSpanDivInFragment tests inline span followed by block div in a fragment
+func TestSpanDivInFragment(t *testing.T) {
+	t.Run("RenderSpanThenDivInFragment", func(t *testing.T) {
+		// Create text nodes
+		spanText := &dom.Node{
+			Type:  dom.ElementTypeText,
+			Props: dom.NewStructProps(dom.TextNodeProps{}),
+			Text:  "text1",
+		}
+
+		divText := &dom.Node{
+			Type:  dom.ElementTypeText,
+			Props: dom.NewStructProps(dom.TextNodeProps{}),
+			Text:  "text2",
+		}
+
+		// Create span element (inline)
+		spanElement := &dom.Node{
+			Type:     dom.ElementTypeSpan,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{spanText},
+		}
+
+		// Create div element (block)
+		divElement := &dom.Node{
+			Type:     dom.ElementTypeDiv,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{divText},
+		}
+
+		// Create fragment with span followed by div
+		fragment := &dom.Node{
+			Type:     dom.ElementTypeFragment,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{spanElement, divElement},
+		}
+
+		// Render the structure
+		output := renderNodeHelper(fragment)
+
+		// Expected: span renders inline, then div starts on new line
+		// The span "text1" should be followed by div "text2" on a new line
+		expected := "text1\ntext2\n"
+
+		// Check exact string match
+		if output != expected {
+			t.Errorf("Expected exact output:\n%q\nGot:\n%q", expected, output)
+		}
+	})
+}
