@@ -84,7 +84,7 @@ func (d *DOM) DispatchKeyDownEvent(keyEvent *KeydownEvent) {
 		eventNode = d.Root
 	}
 
-	log.Logf("DOM: DispatchKeyDownEvent %s key='%s' to focused node %s", keyEvent.KeyType, eventNode.Type)
+	log.Logf("DOM: DispatchKeyDownEvent keyType='%s' key='%s' to focused node %s", keyEvent.KeyType, keyEvent.Runes, eventNode.Type)
 
 	// Create the event
 	event := &DOMEvent{
@@ -114,9 +114,11 @@ func (d *DOM) handleEventBubbling(node *Node, event *DOMEvent) {
 	event.CurrentTarget = node
 
 	handler := node.GetEventHandler(event.Type)
-
 	if handler != nil {
+		log.Logf("DOM: handleEventBubbling - calling handler for node %s", node.Type)
 		handler(event)
+	} else {
+		log.Logf("DOM: handleEventBubbling - no handler found for node %s", node.Type)
 	}
 
 	// If event wasn't stopped, bubble to parent

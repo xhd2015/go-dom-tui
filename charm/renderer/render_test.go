@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -8,10 +9,17 @@ import (
 	"github.com/xhd2015/go-dom-tui/dom"
 )
 
+// stripColor removes ANSI escape sequences from a string
+func stripColor(str string) string {
+	ansiRegex := regexp.MustCompile(`\x1b\[[0-9;]*m`)
+	return ansiRegex.ReplaceAllString(str, "")
+}
+
 // renderNodeHelper is a helper function that takes a *dom.Node and returns the rendered string
 func renderNodeHelper(vnode *dom.Node) string {
 	renderer := NewInteractiveCharmRenderer()
-	return renderer.Render(vnode)
+	output := renderer.Render(vnode)
+	return stripColor(output)
 }
 
 // TestRenderInput tests the renderInput function
@@ -435,6 +443,39 @@ func TestSpanDivInFragment(t *testing.T) {
 		// Expected: span renders inline, then div starts on new line
 		// The span "text1" should be followed by div "text2" on a new line
 		expected := "text1\ntext2\n"
+
+		// Check exact string match
+		if output != expected {
+			t.Errorf("Expected exact output:\n%q\nGot:\n%q", expected, output)
+		}
+	})
+}
+
+// TestMultiLineTextInDiv tests rendering multi-line text content within a div
+func TestMultiLineTextInDiv(t *testing.T) {
+	t.Run("RenderDivWithMultiLineText", func(t *testing.T) {
+		// Create multi-line text content
+		multiLineText := "ABC\n123\nX Y Z\n--END--"
+
+		// Create text node with multi-line content
+		textNode := &dom.Node{
+			Type:  dom.ElementTypeText,
+			Props: dom.NewStructProps(dom.TextNodeProps{}),
+			Text:  multiLineText,
+		}
+
+		// Create div element containing the multi-line text
+		divElement := &dom.Node{
+			Type:     dom.ElementTypeDiv,
+			Props:    dom.NewStructProps(dom.EmptyProps{}),
+			Children: []*dom.Node{textNode},
+		}
+
+		// Render the structure
+		output := renderNodeHelper(divElement)
+
+		// Expected: the renderer strips internal newlines and adds a trailing newline
+		expected := "ABC123X Y Z--END--\n"
 
 		// Check exact string match
 		if output != expected {
