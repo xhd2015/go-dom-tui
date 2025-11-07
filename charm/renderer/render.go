@@ -34,6 +34,24 @@ func NewInteractiveCharmRenderer() *InteractiveCharmRenderer {
 	}
 }
 
+func RenderToString(vnode *dom.Node) string {
+	cr := NewInteractiveCharmRenderer()
+	return cr.Render(vnode)
+}
+
+// RenderToStringStripColor is a helper function that takes a *dom.Node and returns the rendered string
+func RenderToStringStripColor(vnode *dom.Node) string {
+	renderer := NewInteractiveCharmRenderer()
+	output := renderer.Render(vnode)
+	return StripColor(output)
+}
+
+// StripColor removes ANSI escape sequences from a string
+func StripColor(str string) string {
+	ansiRegex := regexp.MustCompile(`\x1b\[[0-9;]*m`)
+	return ansiRegex.ReplaceAllString(str, "")
+}
+
 // updateRenderState updates the renderer state after rendering an element
 func (cr *InteractiveCharmRenderer) updateRenderState(elementType string, addedNewline bool) {
 	cr.lastWasBlock = cr.isBlockElementType(elementType)

@@ -1,7 +1,6 @@
 package renderer
 
 import (
-	"regexp"
 	"strings"
 	"testing"
 
@@ -9,17 +8,11 @@ import (
 	"github.com/xhd2015/go-dom-tui/dom"
 )
 
-// stripColor removes ANSI escape sequences from a string
-func stripColor(str string) string {
-	ansiRegex := regexp.MustCompile(`\x1b\[[0-9;]*m`)
-	return ansiRegex.ReplaceAllString(str, "")
-}
-
 // renderNodeHelper is a helper function that takes a *dom.Node and returns the rendered string
 func renderNodeHelper(vnode *dom.Node) string {
 	renderer := NewInteractiveCharmRenderer()
 	output := renderer.Render(vnode)
-	return stripColor(output)
+	return StripColor(output)
 }
 
 // TestRenderInput tests the renderInput function
@@ -41,7 +34,7 @@ func TestRenderInput(t *testing.T) {
 		}
 
 		// Render the input using helper
-		output := renderNodeHelper(vnode)
+		output := RenderToStringStripColor(vnode)
 
 		// Check that output was generated
 		if output == "" {
@@ -66,7 +59,7 @@ func TestRenderInput(t *testing.T) {
 		}
 
 		// Render the input using helper
-		output := renderNodeHelper(vnode)
+		output := RenderToStringStripColor(vnode)
 
 		// Check that output was generated
 		if output == "" {
@@ -93,7 +86,7 @@ func TestRenderInput(t *testing.T) {
 		}
 
 		// Render the input using helper
-		output := renderNodeHelper(vnode)
+		output := RenderToStringStripColor(vnode)
 
 		// Check that output was generated
 		if output == "" {
@@ -110,7 +103,7 @@ func TestRenderInput(t *testing.T) {
 		}
 
 		// Render the input using helper
-		output := renderNodeHelper(vnode)
+		output := RenderToStringStripColor(vnode)
 
 		// Check that output was generated (should use defaults)
 		if output == "" {
@@ -125,7 +118,7 @@ func TestRenderInput(t *testing.T) {
 		}
 
 		// Should not panic with empty props
-		output := renderNodeHelper(vnode)
+		output := RenderToStringStripColor(vnode)
 
 		// Check that output was generated (should use defaults)
 		if output == "" {
@@ -151,7 +144,7 @@ func TestRenderButton(t *testing.T) {
 		}
 
 		// Render the button using helper
-		output := renderNodeHelper(vnode)
+		output := RenderToStringStripColor(vnode)
 
 		// Check that output was generated
 		if output == "" {
@@ -182,7 +175,7 @@ func TestRenderText(t *testing.T) {
 		}
 
 		// Render the text using helper
-		output := renderNodeHelper(vnode)
+		output := RenderToStringStripColor(vnode)
 
 		// Check that output was generated
 		if output == "" {
@@ -213,7 +206,7 @@ func TestTitle(t *testing.T) {
 		}
 
 		// Render the H1 using helper
-		output := renderNodeHelper(vnode)
+		output := RenderToStringStripColor(vnode)
 
 		// Check that output was generated
 		if output == "" {
@@ -246,7 +239,7 @@ func TestTitle(t *testing.T) {
 		}
 
 		// Render the H2 using helper
-		output := renderNodeHelper(vnode)
+		output := RenderToStringStripColor(vnode)
 
 		// Check that output was generated
 		if output == "" {
@@ -273,7 +266,7 @@ func TestTitle(t *testing.T) {
 		}
 
 		// Render the H1 using helper
-		output := renderNodeHelper(vnode)
+		output := RenderToStringStripColor(vnode)
 
 		// Check that output was generated (should handle empty content gracefully)
 		if output == "" {
@@ -290,7 +283,7 @@ func TestTitle(t *testing.T) {
 		}
 
 		// Render the H2 using helper
-		output := renderNodeHelper(vnode)
+		output := RenderToStringStripColor(vnode)
 
 		// Check that output was generated (should handle empty content gracefully)
 		if output == "" {
@@ -336,7 +329,7 @@ func TestNestedDiv(t *testing.T) {
 		}
 
 		// Render the nested div structure
-		output := renderNodeHelper(parentDiv)
+		output := RenderToStringStripColor(parentDiv)
 
 		// Expected output should be exact literal string match
 		// Should not have extra newline when children are already block elements
@@ -387,7 +380,7 @@ func TestSpanFollowedByDiv(t *testing.T) {
 		}
 
 		// Render the structure
-		output := renderNodeHelper(container)
+		output := RenderToStringStripColor(container)
 
 		// Expected: span renders inline, then div starts on new line
 		// The span "text1" should be followed by div "text2" on a new line
@@ -438,7 +431,7 @@ func TestSpanDivInFragment(t *testing.T) {
 		}
 
 		// Render the structure
-		output := renderNodeHelper(fragment)
+		output := RenderToStringStripColor(fragment)
 
 		// Expected: span renders inline, then div starts on new line
 		// The span "text1" should be followed by div "text2" on a new line
@@ -472,7 +465,7 @@ func TestMultiLineTextInDiv(t *testing.T) {
 		}
 
 		// Render the structure
-		output := renderNodeHelper(divElement)
+		output := RenderToStringStripColor(divElement)
 
 		// Expected: the renderer strips internal newlines and adds a trailing newline
 		expected := "ABC123X Y Z--END--\n"
