@@ -14,6 +14,15 @@ func GetNodeRenderedWidth(node *dom.Node) int {
 		return len([]rune(node.Text))
 	}
 
+	// For hdiv (horizontal div), sum up children widths (placed horizontally)
+	if node.Type == dom.ElementTypeHDiv {
+		totalWidth := 0
+		for _, child := range node.Children {
+			totalWidth += GetNodeRenderedWidth(child)
+		}
+		return totalWidth
+	}
+
 	// For fragments and divs, sum up children widths
 	if node.Type == dom.ElementTypeFragment || node.Type == dom.ElementTypeDiv {
 		totalWidth := 0

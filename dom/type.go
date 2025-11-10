@@ -4,6 +4,7 @@ package dom
 const (
 	ElementTypeText     = "text"
 	ElementTypeDiv      = "div"
+	ElementTypeHDiv     = "hdiv" // Horizontal div - places children horizontally
 	ElementTypeSpan     = "span"
 	ElementTypeBr       = "br"
 	ElementTypeH1       = "h1"

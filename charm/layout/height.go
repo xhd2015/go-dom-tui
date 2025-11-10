@@ -34,6 +34,22 @@ func GetNodeRenderedHeight(node *dom.Node) int {
 		return maxHeight
 	}
 
+	// For hdiv (horizontal div), children are placed horizontally
+	// Height is the maximum height of all children
+	if node.Type == dom.ElementTypeHDiv {
+		maxHeight := 0
+		for _, child := range node.Children {
+			height := GetNodeRenderedHeight(child)
+			if height > maxHeight {
+				maxHeight = height
+			}
+		}
+		if maxHeight == 0 {
+			return 1 // Empty hdiv takes 1 line
+		}
+		return maxHeight
+	}
+
 	// For divs and other block elements
 	if node.Type == dom.ElementTypeDiv || node.Type == dom.ElementTypeSpan ||
 		node.Type == dom.ElementTypeH1 || node.Type == dom.ElementTypeH2 ||

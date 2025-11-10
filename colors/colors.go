@@ -14,3 +14,20 @@ const (
 	DARK_RED_4 = "#f00089"
 	DARK_RED_5 = "#fa028f"
 )
+
+// ANSI 256 color codes for terminal
+const (
+	// Basic colors
+	Red         = "1"  // Red - for errors
+	Yellow      = "3"  // Yellow - for focused/highlighted items
+	Cyan        = "6"  // Cyan - for metadata
+	Grey        = "8"  // Grey - for dimmed/secondary text
+	BrightWhite = "15" // Bright white - for primary text
+
+	// Semantic names
+	TextPrimary   = BrightWhite // Primary readable text
+	TextSecondary = Grey        // Secondary/dimmed text
+	TextError     = Red         // Error messages
+	TextHighlight = Yellow      // Highlighted/focused items
+	TextMetadata  = Cyan        // Metadata information
+)

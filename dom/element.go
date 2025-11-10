@@ -46,6 +46,11 @@ func Div(props DivProps, children ...*Node) *Node {
 	return CreateNode(ElementTypeDiv, NewStructProps(props), children...)
 }
 
+// HDiv creates a horizontal div component that places children left to right
+func HDiv(props DivProps, children ...*Node) *Node {
+	return CreateNode(ElementTypeHDiv, NewStructProps(props), children...)
+}
+
 // Span creates a span component
 func Span(props DivProps, children ...*Node) *Node {
 	return CreateNode(ElementTypeSpan, NewStructProps(props), children...)
