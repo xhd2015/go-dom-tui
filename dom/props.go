@@ -242,6 +242,7 @@ type ListItemProps struct {
 // SpacerProps represents props for spacer elements
 type SpacerProps struct {
 	MinSize int // Minimum size in characters (default: 1)
+	MaxSize int // Maximum size in characters (default: 0)
 }
 
 // FixedSpacerProps represents props for fixed spacer elements

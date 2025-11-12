@@ -264,6 +264,17 @@ func (cr *InteractiveCharmRenderer) renderFixedSpacerForHorizontal(vnode *dom.No
 	return Rectangle{Width: space, Height: 1, Lines: []string{strings.Repeat(" ", space)}}
 }
 
+// renderFixedSpacerForHorizontal renders a fixed spacer for horizontal layout (HDiv)
+// Returns: width = space, height = 1
+func (cr *InteractiveCharmRenderer) renderSpacerForHorizontal(vnode *dom.Node) Rectangle {
+	props := dom.ExtractProps[dom.SpacerProps](vnode.Props)
+	minSize := props.MinSize
+	if minSize <= 0 {
+		minSize = 1
+	}
+	return Rectangle{Width: minSize, Height: 1, Lines: []string{strings.Repeat(" ", minSize)}}
+}
+
 // renderFixedSpacerForVertical renders a fixed spacer for vertical layout (Div, Fragment, Ul)
 // Returns: width = 0, height = space
 func (cr *InteractiveCharmRenderer) renderFixedSpacerForVertical(vnode *dom.Node) Rectangle {
@@ -357,6 +368,7 @@ func (cr *InteractiveCharmRenderer) renderHDivToRect(vnode *dom.Node, width, hei
 	var childRects []Rectangle
 	remainingWidth := width
 
+	var spacerRectIndexes []int
 	for _, child := range vnode.Children {
 		if remainingWidth <= 0 {
 			break
@@ -368,6 +380,14 @@ func (cr *InteractiveCharmRenderer) renderHDivToRect(vnode *dom.Node, width, hei
 				childRects = append(childRects, childRect)
 				remainingWidth -= childRect.Width
 			}
+		} else if child.Type == dom.ElementTypeSpacer {
+			spacerRect := Rectangle{
+				Height: height,
+				Lines:  make([]string, height),
+			}
+			idx := len(childRects)
+			spacerRectIndexes = append(spacerRectIndexes, idx)
+			childRects = append(childRects, spacerRect)
 		} else {
 			childRect := cr.renderNodeToRect(child, remainingWidth, height)
 			if childRect.Width > 0 {
@@ -379,6 +399,40 @@ func (cr *InteractiveCharmRenderer) renderHDivToRect(vnode *dom.Node, width, hei
 
 	if len(childRects) == 0 {
 		return Rectangle{Width: 0, Height: 0, Lines: []string{}}
+	}
+
+	if remainingWidth > 0 && len(spacerRectIndexes) > 0 {
+		n := len(spacerRectIndexes)
+		avgWidth := remainingWidth / n
+		lastOneWidth := remainingWidth % n
+
+		log.Logf("remainingWidth: %d, spacerRectIndexes: %v, avgWidth: %d, lastOneWidth: %d", remainingWidth, spacerRectIndexes, avgWidth, lastOneWidth)
+		for i := 0; i < n-1; i++ {
+			idx := spacerRectIndexes[i]
+			childRects[idx].Width = avgWidth
+		}
+		idx := spacerRectIndexes[n-1]
+		if lastOneWidth == 0 {
+			log.Logf("lastOneWidth is 0, setting width to avgWidth: %d", avgWidth)
+			childRects[idx].Width = avgWidth
+		} else {
+			childRects[idx].Width = lastOneWidth
+		}
+		for _, idx := range spacerRectIndexes {
+			child := vnode.Children[idx]
+			props := dom.ExtractProps[dom.SpacerProps](child.Props)
+			maxSize := props.MaxSize
+			width := childRects[idx].Width
+			if maxSize > 0 && width > maxSize {
+				width = maxSize
+				childRects[idx].Width = width
+			}
+
+			lines := childRects[idx].Lines
+			for i := 0; i < len(lines); i++ {
+				lines[i] = strings.Repeat(" ", width)
+			}
+		}
 	}
 
 	props := dom.ExtractProps[dom.DivProps](vnode.Props)

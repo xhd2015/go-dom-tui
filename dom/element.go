@@ -4,6 +4,29 @@ import (
 	"github.com/xhd2015/go-dom-tui/styles"
 )
 
+// Option represents an option for DoSomething
+type Option func(cfg *elementConfig)
+
+// elementConfig holds configuration for parsing
+type elementConfig struct {
+	minSize int
+	maxSize int
+}
+
+// WithMinSize sets the minimum size for parsing
+func WithMinSize(size int) Option {
+	return func(cfg *elementConfig) {
+		cfg.minSize = size
+	}
+}
+
+// WithMaxSize sets the maximum depth for parsing
+func WithMaxSize(size int) Option {
+	return func(cfg *elementConfig) {
+		cfg.maxSize = size
+	}
+}
+
 // CreateNode creates a virtual element (like React.createElement)
 func CreateNode(typ string, props Props, children ...*Node) *Node {
 	return &Node{
@@ -100,8 +123,15 @@ func Fragment(children ...*Node) *Node {
 }
 
 // Spacer creates a spacer component that expands to fill available horizontal space
-func Spacer() *Node {
-	return CreateNode(ElementTypeSpacer, NewStructProps(SpacerProps{MinSize: 1}))
+func Spacer(options ...Option) *Node {
+	cfg := &elementConfig{}
+	for _, option := range options {
+		option(cfg)
+	}
+	return CreateNode(ElementTypeSpacer, NewStructProps(SpacerProps{
+		MinSize: cfg.minSize,
+		MaxSize: cfg.maxSize,
+	}))
 }
 
 // FixedSpacer creates a fixed spacer component with a specific size
