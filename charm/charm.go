@@ -97,7 +97,7 @@ func (c *CharmApp[T]) Update(msg tea.Msg) {
 	}
 }
 
-// View renders the current view
+// View renders the current view using rectangle-based rendering
 func (c *CharmApp[T]) Render() string {
 	window := &dom.Window{
 		Width:  c.width,
@@ -105,6 +105,7 @@ func (c *CharmApp[T]) Render() string {
 	}
 	c.dom = dom.NewDOM(c.Root(c.State, window), window)
 
-	// Render the output
-	return c.renderer.Render(c.dom.Root)
+	// Use rectangle-based rendering
+	rect := c.renderer.RenderToRect(c.dom.Root, c.width, c.height)
+	return rect.String()
 }

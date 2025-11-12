@@ -51,6 +51,12 @@ func HDiv(props DivProps, children ...*Node) *Node {
 	return CreateNode(ElementTypeHDiv, NewStructProps(props), children...)
 }
 
+// ZDiv creates a z-index div component that stacks children in z-order (like SwiftUI ZStack)
+// Children are rendered on top of each other, with later children appearing above earlier ones
+func ZDiv(props DivProps, children ...*Node) *Node {
+	return CreateNode(ElementTypeZDiv, NewStructProps(props), children...)
+}
+
 // Span creates a span component
 func Span(props DivProps, children ...*Node) *Node {
 	return CreateNode(ElementTypeSpan, NewStructProps(props), children...)
@@ -96,4 +102,15 @@ func Fragment(children ...*Node) *Node {
 // Spacer creates a spacer component that expands to fill available horizontal space
 func Spacer() *Node {
 	return CreateNode(ElementTypeSpacer, NewStructProps(SpacerProps{MinSize: 1}))
+}
+
+// FixedSpacer creates a fixed spacer component with a specific size
+// When used in HDiv: adds horizontal space between siblings
+// When used in Div: adds vertical space
+// When used in ZDiv: no effect
+func FixedSpacer(space int) *Node {
+	if space <= 0 {
+		space = 1
+	}
+	return CreateNode(ElementTypeFixedSpacer, NewStructProps(FixedSpacerProps{Space: space}))
 }

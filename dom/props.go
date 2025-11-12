@@ -8,12 +8,14 @@ import (
 	"github.com/xhd2015/go-dom-tui/styles"
 )
 
-// HDivAlign defines the vertical alignment of children in HDiv
-type HDivAlign string
+type Align string
 
 const (
-	HDivAlignTop    HDivAlign = "top"
-	HDivAlignBottom HDivAlign = "bottom"
+	AlignTop    Align = "top"
+	AlignBottom Align = "bottom"
+	AlignLeft   Align = "left"
+	AlignRight  Align = "right"
+	AlignCenter Align = "center"
 )
 
 func ExtractProps[T any](props Props) T {
@@ -144,8 +146,8 @@ type ButtonProps struct {
 // DivProps represents props for div elements
 type DivProps struct {
 	Style styles.Style
-	Width int       // Container width in characters (0 = use window width)
-	Align HDivAlign // Vertical alignment for HDiv: "top" (default) or "bottom"
+	Width int   // Container width in characters (0 = use window width)
+	Align Align // Vertical alignment for HDiv: "top" (default) or "bottom"
 
 	OnKeyDown      func(*DOMEvent)
 	OnWindowResize func(*DOMEvent)
@@ -240,4 +242,9 @@ type ListItemProps struct {
 // SpacerProps represents props for spacer elements
 type SpacerProps struct {
 	MinSize int // Minimum size in characters (default: 1)
+}
+
+// FixedSpacerProps represents props for fixed spacer elements
+type FixedSpacerProps struct {
+	Space int // Fixed space in characters (default: 1)
 }

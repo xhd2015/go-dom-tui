@@ -1,17 +1,20 @@
 package layout
 
-import "github.com/xhd2015/go-dom-tui/dom"
+import (
+	"github.com/charmbracelet/lipgloss"
+	"github.com/xhd2015/go-dom-tui/dom"
+)
 
 // GetNodeRenderedWidth calculates the approximate rendered width of a DOM node
-// This is a simplified calculation that works for text nodes
+// This calculation accounts for ANSI escape sequences (colors, styles) and control characters
 func GetNodeRenderedWidth(node *dom.Node) int {
 	if node == nil {
 		return 0
 	}
 
-	// For text nodes, count the runes
+	// For text nodes, use lipgloss.Width which correctly handles ANSI escape codes
 	if node.Type == dom.ElementTypeText {
-		return len([]rune(node.Text))
+		return lipgloss.Width(node.Text)
 	}
 
 	// For hdiv (horizontal div), sum up children widths (placed horizontally)
