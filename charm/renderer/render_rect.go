@@ -180,6 +180,9 @@ func (cr *InteractiveCharmRenderer) renderListToRect(vnode *dom.Node, width, hei
 	remainingHeight := height
 
 	for _, child := range vnode.Children {
+		if child == nil {
+			continue
+		}
 		if remainingHeight <= 0 {
 			break
 		}
@@ -264,17 +267,6 @@ func (cr *InteractiveCharmRenderer) renderFixedSpacerForHorizontal(vnode *dom.No
 	return Rectangle{Width: space, Height: 1, Lines: []string{strings.Repeat(" ", space)}}
 }
 
-// renderFixedSpacerForHorizontal renders a fixed spacer for horizontal layout (HDiv)
-// Returns: width = space, height = 1
-func (cr *InteractiveCharmRenderer) renderSpacerForHorizontal(vnode *dom.Node) Rectangle {
-	props := dom.ExtractProps[dom.SpacerProps](vnode.Props)
-	minSize := props.MinSize
-	if minSize <= 0 {
-		minSize = 1
-	}
-	return Rectangle{Width: minSize, Height: 1, Lines: []string{strings.Repeat(" ", minSize)}}
-}
-
 // renderFixedSpacerForVertical renders a fixed spacer for vertical layout (Div, Fragment, Ul)
 // Returns: width = 0, height = space
 func (cr *InteractiveCharmRenderer) renderFixedSpacerForVertical(vnode *dom.Node) Rectangle {
@@ -297,6 +289,9 @@ func (cr *InteractiveCharmRenderer) renderFragmentToRect(vnode *dom.Node, width,
 	remainingHeight := height
 
 	for _, child := range vnode.Children {
+		if child == nil {
+			continue
+		}
 		if remainingHeight <= 0 {
 			break
 		}
@@ -330,6 +325,9 @@ func (cr *InteractiveCharmRenderer) renderContainerToRect(vnode *dom.Node, width
 	remainingHeight := height
 
 	for _, child := range vnode.Children {
+		if child == nil {
+			continue
+		}
 		if remainingHeight <= 0 {
 			break
 		}
@@ -370,6 +368,9 @@ func (cr *InteractiveCharmRenderer) renderHDivToRect(vnode *dom.Node, width, hei
 
 	var spacerRectIndexes []int
 	for _, child := range vnode.Children {
+		if child == nil {
+			continue
+		}
 		if remainingWidth <= 0 {
 			break
 		}
@@ -420,6 +421,9 @@ func (cr *InteractiveCharmRenderer) renderHDivToRect(vnode *dom.Node, width, hei
 		}
 		for _, idx := range spacerRectIndexes {
 			child := vnode.Children[idx]
+			if child == nil {
+				continue
+			}
 			props := dom.ExtractProps[dom.SpacerProps](child.Props)
 			maxSize := props.MaxSize
 			width := childRects[idx].Width
@@ -449,6 +453,9 @@ func (cr *InteractiveCharmRenderer) renderZDivToRect(vnode *dom.Node, width, hei
 	// Render each child to a Rectangle with the same dimensions
 	childRects := make([]Rectangle, 0, len(vnode.Children))
 	for _, child := range vnode.Children {
+		if child == nil {
+			continue
+		}
 		// Skip FixedSpacer in ZDiv (no effect)
 		if child.Type == dom.ElementTypeFixedSpacer {
 			continue
@@ -480,6 +487,9 @@ func (cr *InteractiveCharmRenderer) renderDefaultToRect(vnode *dom.Node, width, 
 	remainingHeight := height - 2 // Reserve space for opening and closing tags
 
 	for _, child := range vnode.Children {
+		if child == nil {
+			continue
+		}
 		if remainingHeight <= 0 {
 			break
 		}
